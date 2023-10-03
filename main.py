@@ -9,10 +9,11 @@ class GCovDataFunctionAnnouncementRecord:
         header uint32:ident uint32:checksum
     """
 
-    def __init__(self, header, ident, checksum):
+    def __init__(self, header, ident, lineno_checksum, cfg_checksum):
         self.header = header
-        self.indent = ident
-        self.check_sum = checksum
+        self.ident = ident
+        self.lineno_checksum = lineno_checksum
+        self.cfg_checksum = cfg_checksum
         return
 
 
@@ -38,14 +39,14 @@ class GCovDataObjectSummaryRecord:
 class GCovDataProgramSummaryRecord:
     """"""
 
-    def __init__(self, header, checksum, num, runs, sum, max, summax):
+    def __init__(self, header, checksum, counts, runs, sum_all, run_max, sum_max):
         self.header = header
         self.check_sum = checksum
-        self.num = num
+        self.counts = counts
         self.runs = runs
-        self.sum = sum
-        self.max = max
-        self.sum_max = summax
+        self.sum_all = sum_all
+        self.run_max = run_max
+        self.sum_max = sum_max
         return
 
 
@@ -168,53 +169,6 @@ class GCovDataTimeProfilerRecord:
         self.time_profiler = time_profiler
 
 
-def extremum_mutation(record):
-    if isinstance(record, GCovDataCounterBaseRecord):
-        data = record.counters
-    elif isinstance(record, GCovDataTimeProfilerRecord):
-        data = record.time_profiler
-    else:
-        return
-    if random.randint(0, 1):
-        data[random.randint(0, len(data) - 1)] = sys.maxsize
-    else:
-        data[random.randint(0, len(data) - 1)] = 0
-
-
-def one_value_mutation(record):
-    if isinstance(record, GCovDataCounterBaseRecord):
-        data = record.counters
-    elif isinstance(record, GCovDataTimeProfilerRecord):
-        data = record.time_profiler
-    else:
-        return
-    if random.randint(0, 1):
-        data[random.randint(0, len(data) - 1)] += 1
-    else:
-        data[random.randint(0, len(data) - 1)] -= 1
-    pass
-
-
-def shuffle_mutation(record):
-    if isinstance(record, GCovDataCounterBaseRecord):
-        data = record.counters
-    elif isinstance(record, GCovDataTimeProfilerRecord):
-        data = record.time_profiler
-    else:
-        return
-    random.shuffle(data)
-
-
-def random_mutation(record):
-    if isinstance(record, GCovDataCounterBaseRecord):
-        data = record.counters
-    elif isinstance(record, GCovDataTimeProfilerRecord):
-        data = record.time_profiler
-    else:
-        return
-    data[random.randint(0, len(data) - 1)] = random.randint(0, sys.maxsize)
-
-
 class GcdaInfo:
     """
         FILE FORMAT:
@@ -253,18 +207,57 @@ class GcdaInfo:
     def mutate(self):
         """
         """
-        index = random.Random().randint(0, len(self.records) - 1)
-        record = self.records[index]
-
+        data = [record for record in self.records if
+                isinstance(record, GCovDataCounterBaseRecord) or isinstance(record, GCovDataTimeProfilerRecord)]
+        record = data[random.Random().randint(0, len(data) - 1)]
         mutator = random.Random().randint(0, 3)
         if mutator == 0:
-            extremum_mutation(record)
+            self.extremum_mutation(record)
         elif mutator == 1:
-            one_value_mutation(record)
+            self.one_value_mutation(record)
         elif mutator == 2:
-            shuffle_mutation(record)
+            self.shuffle_mutation(record)
         else:
-            random_mutation(record)
+            self.random_mutation(record)
+
+    @staticmethod
+    def extremum_mutation(record):
+        if isinstance(record, GCovDataCounterBaseRecord):
+            data = record.counters
+        else:
+            data = record.time_profiler
+        if random.randint(0, 1):
+            data[random.randint(0, len(data) - 1)] = sys.maxsize
+        else:
+            data[random.randint(0, len(data) - 1)] = 0
+
+    @staticmethod
+    def one_value_mutation(record):
+        if isinstance(record, GCovDataCounterBaseRecord):
+            data = record.counters
+        else:
+            data = record.time_profiler
+        if random.randint(0, 1):
+            data[random.randint(0, len(data) - 1)] += 1
+        else:
+            data[random.randint(0, len(data) - 1)] -= 1
+        pass
+
+    @staticmethod
+    def shuffle_mutation(record):
+        if isinstance(record, GCovDataCounterBaseRecord):
+            data = record.counters
+        else:
+            data = record.time_profiler
+        random.shuffle(data)
+
+    @staticmethod
+    def random_mutation(record):
+        if isinstance(record, GCovDataCounterBaseRecord):
+            data = record.counters
+        else:
+            data = record.time_profiler
+        data[random.randint(0, len(data) - 1)] = random.randint(0, sys.maxsize)
 
     def pull_records(self):
         """
@@ -326,7 +319,7 @@ class GcdaInfo:
             raise IOError("GCovInfo: save 'Filename' not set")
 
         try:
-            file_handle = open(self.filename, 'w')
+            file_handle = open(self.filename, 'wb')
 
             self._save_header(file_handle)
             self._save_records(file_handle)
@@ -572,15 +565,16 @@ class GcdaInfo:
             header: uint32:tag uint32:length
               data: item*
         """
-        recordTag = record.tag
-        GcdaInfo.write_uint32(file_handle, recordTag)
-
-        recordLength = record.length
-        GcdaInfo.write_uint32(file_handle, recordLength)
-
-        recordItemsData = record.items_data
-        GcdaInfo.write_uint32(file_handle, recordItemsData)
-
+        if isinstance(record, GCovDataProgramSummaryRecord):
+            GcdaInfo.write_program_summary(file_handle, record)
+        elif isinstance(record, GCovDataCounterBaseRecord):
+            GcdaInfo.write_counter_base(file_handle, record)
+        elif isinstance(record, GCovDataTimeProfilerRecord):
+            GcdaInfo.write_time_profiler(file_handle, record)
+        elif isinstance(record, GCovDataObjectSummaryRecord):
+            GcdaInfo.write_object_summary(file_handle, record)
+        elif isinstance(record, GCovDataFunctionAnnouncementRecord):
+            GcdaInfo.write_function_announcement(file_handle, record)
         return
 
     @staticmethod
@@ -592,19 +586,19 @@ class GcdaInfo:
         buffer = record.items_data
 
         if tag == GcdaConst.GCOV_TAG_FUNCTION:
-            swapRecord = GcdaInfo.unpack_function_announcement(header, buffer, cpos, packStr)
+            swap_record = GcdaInfo.unpack_function_announcement(header, buffer, cpos, packStr)
         elif tag == GcdaConst.GCOV_TAG_COUNTER_BASE:
-            swapRecord = GcdaInfo.unpack_counter_base(header, buffer, cpos, packStr)
+            swap_record = GcdaInfo.unpack_counter_base(header, buffer, cpos, packStr)
         elif tag == GcdaConst.GCOV_TAG_TIME_PROFILER:
-            swapRecord = GcdaInfo.unpack_time_profiler(header, buffer, cpos, packStr)
+            swap_record = GcdaInfo.unpack_time_profiler(header, buffer, cpos, packStr)
         elif tag == GcdaConst.GCOV_TAG_OBJECT_SUMMARY:
-            swapRecord = GcdaInfo.unpack_object_summary(header, buffer, cpos, packStr)
+            swap_record = GcdaInfo.unpack_object_summary(header, buffer, cpos, packStr)
         elif tag == GcdaConst.GCOV_TAG_PROGRAM_SUMMARY:
-            swapRecord = GcdaInfo.unpack_program_summary(header, buffer, cpos, packStr)
+            swap_record = GcdaInfo.unpack_program_summary(header, buffer, cpos, packStr)
         else:
             raise IOError("Un-recognized tag (0x%x) found at record index in file." % tag)
 
-        return swapRecord
+        return swap_record
 
     @staticmethod
     def unpack_object_summary(header, buffer, pos, packStr=GcdaConst.PACKUINT32):
@@ -626,13 +620,13 @@ class GcdaInfo:
         cpos = pos
 
         checksum, cpos = GcdaInfo.unpack_uint32(buffer, cpos, packStr)
-        num, cpos = GcdaInfo.unpack_uint32(buffer, cpos, packStr)
+        counts, cpos = GcdaInfo.unpack_uint32(buffer, cpos, packStr)
         runs, cpos = GcdaInfo.unpack_uint32(buffer, cpos, packStr)
+        sum_all, cpos = GcdaInfo.unpack_uint64(buffer, cpos, packStr)
+        run_max, cpos = GcdaInfo.unpack_uint64(buffer, cpos, packStr)
         sum_max, cpos = GcdaInfo.unpack_uint64(buffer, cpos, packStr)
-        max, cpos = GcdaInfo.unpack_uint64(buffer, cpos, packStr)
-        summax, cpos = GcdaInfo.unpack_uint64(buffer, cpos, packStr)
 
-        rval = GCovDataProgramSummaryRecord(header, checksum, num, runs, sum, max, summax)
+        rval = GCovDataProgramSummaryRecord(header, checksum, counts, runs, sum_all, run_max, sum_max)
 
         return rval
 
@@ -665,11 +659,11 @@ class GcdaInfo:
             announce_function: header uint32:ident uint32:checksum string:name string:source uint32:lineno
         """
         cpos = pos
-
         ident, cpos = GcdaInfo.unpack_uint32(buffer, cpos, packStr)
-        checksum, cpos = GcdaInfo.unpack_uint32(buffer, cpos, packStr)
+        lineno_checksum, cpos = GcdaInfo.unpack_uint32(buffer, cpos, packStr)
+        cfg_checksum, cpos = GcdaInfo.unpack_uint32(buffer, cpos, packStr)
 
-        rval = GCovDataFunctionAnnouncementRecord(header, ident, checksum)
+        rval = GCovDataFunctionAnnouncementRecord(header, ident, lineno_checksum, cfg_checksum)
 
         return rval
 
@@ -693,6 +687,75 @@ class GcdaInfo:
 
         return rval
 
+    @classmethod
+    def write_program_summary(cls, file_handle, record):
+        header = record.header
+        checksum = record.check_sum
+        counts = record.counts
+        runs = record.runs
+        sum_all = record.sum_all
+        run_max = record.run_max
+        sum_max = record.sum_max
+
+        GcdaInfo.write_uint32(file_handle, header.tag)
+        GcdaInfo.write_uint32(file_handle, header.length)
+        GcdaInfo.write_uint32(file_handle, checksum)
+        GcdaInfo.write_uint32(file_handle, counts)
+        GcdaInfo.write_uint32(file_handle, runs)
+        GcdaInfo.write_uint64(file_handle, sum_all)
+        GcdaInfo.write_uint64(file_handle, run_max)
+        GcdaInfo.write_uint64(file_handle, sum_max)
+
+        return
+
+    @classmethod
+    def write_counter_base(cls, file_handle, record):
+        header = record.header
+        counters = record.counters
+
+        GcdaInfo.write_uint32(file_handle, header.tag)
+        GcdaInfo.write_uint32(file_handle, header.length)
+        for counter in counters:
+            GcdaInfo.write_uint64(file_handle, counter)
+        return
+
+    @classmethod
+    def write_time_profiler(cls, file_handle, record):
+        header = record.header
+        time_profiler = record.time_profiler
+
+        GcdaInfo.write_uint32(file_handle, header.tag)
+        GcdaInfo.write_uint32(file_handle, header.length)
+        for time in time_profiler:
+            GcdaInfo.write_uint64(file_handle, time)
+        return
+
+    @classmethod
+    def write_object_summary(cls, file_handle, record):
+        header = record.header
+        runs = record.runs
+        summax = record.sum_max
+
+        GcdaInfo.write_uint32(file_handle, header.tag)
+        GcdaInfo.write_uint32(file_handle, header.length)
+        GcdaInfo.write_uint32(file_handle, runs)
+        GcdaInfo.write_uint32(file_handle, summax)
+        return
+
+    @classmethod
+    def write_function_announcement(cls, file_handle, record):
+        header = record.header
+        indent = record.ident
+        lineno_checksum = record.lineno_checksum
+        cfg_checksum = record.cfg_checksum
+
+        GcdaInfo.write_uint32(file_handle, header.tag)
+        GcdaInfo.write_uint32(file_handle, header.length)
+        GcdaInfo.write_uint32(file_handle, indent)
+        GcdaInfo.write_uint32(file_handle, lineno_checksum)
+        GcdaInfo.write_uint32(file_handle, cfg_checksum)
+        return
+
 
 if __name__ == "__main__":
     gcda = GcdaInfo()
@@ -700,3 +763,6 @@ if __name__ == "__main__":
     gcda.pull_records()
     gcda.mutate()
     gcda.save("data/test_new.gcda")
+    gcda.load("data/test_new.gcda")
+    gcda.pull_records()
+    a = 1
