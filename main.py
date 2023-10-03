@@ -1,5 +1,7 @@
 import os
+import random
 import struct
+import sys
 
 
 class GCovDataFunctionAnnouncementRecord:
@@ -166,6 +168,53 @@ class GCovDataTimeProfilerRecord:
         self.time_profiler = time_profiler
 
 
+def extremum_mutation(record):
+    if isinstance(record, GCovDataCounterBaseRecord):
+        data = record.counters
+    elif isinstance(record, GCovDataTimeProfilerRecord):
+        data = record.time_profiler
+    else:
+        return
+    if random.randint(0, 1):
+        data[random.randint(0, len(data) - 1)] = sys.maxsize
+    else:
+        data[random.randint(0, len(data) - 1)] = 0
+
+
+def one_value_mutation(record):
+    if isinstance(record, GCovDataCounterBaseRecord):
+        data = record.counters
+    elif isinstance(record, GCovDataTimeProfilerRecord):
+        data = record.time_profiler
+    else:
+        return
+    if random.randint(0, 1):
+        data[random.randint(0, len(data) - 1)] += 1
+    else:
+        data[random.randint(0, len(data) - 1)] -= 1
+    pass
+
+
+def shuffle_mutation(record):
+    if isinstance(record, GCovDataCounterBaseRecord):
+        data = record.counters
+    elif isinstance(record, GCovDataTimeProfilerRecord):
+        data = record.time_profiler
+    else:
+        return
+    random.shuffle(data)
+
+
+def random_mutation(record):
+    if isinstance(record, GCovDataCounterBaseRecord):
+        data = record.counters
+    elif isinstance(record, GCovDataTimeProfilerRecord):
+        data = record.time_profiler
+    else:
+        return
+    data[random.randint(0, len(data) - 1)] = random.randint(0, sys.maxsize)
+
+
 class GcdaInfo:
     """
         FILE FORMAT:
@@ -201,13 +250,29 @@ class GcdaInfo:
         self.records = records
         return
 
+    def mutate(self):
+        """
+        """
+        index = random.Random().randint(0, len(self.records) - 1)
+        record = self.records[index]
+
+        mutator = random.Random().randint(0, 3)
+        if mutator == 0:
+            extremum_mutation(record)
+        elif mutator == 1:
+            one_value_mutation(record)
+        elif mutator == 2:
+            shuffle_mutation(record)
+        else:
+            random_mutation(record)
+
     def pull_records(self):
         """
         """
-        recordCount = len(self.records)
+        record_count = len(self.records)
         rindex = 0
 
-        while rindex < recordCount:
+        while rindex < record_count:
             self.pull_record_at_index(rindex)
             rindex += 1
 
@@ -218,17 +283,17 @@ class GcdaInfo:
             raise LookupError(
                 "GCovDataFile.pull_record_at_index: You must call GCovDataFile.Load before attempting to pull a record.")
 
-        recCount = len(self.records)
-        if index >= recCount:
+        rec_count = len(self.records)
+        if index >= rec_count:
             raise IndexError("GCovDataFile.pull_record_at_index: The specified index was out of range.")
 
         record = self.records[index]
         if isinstance(record, GcdaRecord):
-            swapRecord = GcdaInfo.unpack_record(record, self.pack_str32)
+            swap_record = GcdaInfo.unpack_record(record, self.pack_str32)
 
-            self.records[index] = swapRecord
+            self.records[index] = swap_record
             del record
-            record = swapRecord
+            record = swap_record
 
         return record
 
@@ -239,18 +304,18 @@ class GcdaInfo:
         if self.filename is None:
             raise IOError("GCovIO: load 'Filename' not set")
 
-        fileHandle = None
+        file_handle = None
 
         try:
-            fileHandle = open(self.filename, 'rb')
+            file_handle = open(self.filename, 'rb')
 
-            fileSize = os.fstat(fileHandle.fileno()).st_size
+            file_size = os.fstat(file_handle.fileno()).st_size
 
-            self._load_file_header(fileHandle, detectEndianess)
-            self._load_records(fileHandle, fileSize)
+            self._load_file_header(file_handle, detectEndianess)
+            self._load_records(file_handle, file_size)
         finally:
-            if fileHandle is not None:
-                fileHandle.close()
+            if file_handle is not None:
+                file_handle.close()
         return
 
     def save(self, filename=None):
@@ -261,28 +326,28 @@ class GcdaInfo:
             raise IOError("GCovInfo: save 'Filename' not set")
 
         try:
-            fileHandle = open(self.filename, 'w')
+            file_handle = open(self.filename, 'w')
 
-            self._save_header(fileHandle)
-            self._save_records(fileHandle)
+            self._save_header(file_handle)
+            self._save_records(file_handle)
         finally:
-            if fileHandle is not None:
-                fileHandle.close()
+            if file_handle is not None:
+                file_handle.close()
 
         return
 
-    def _load_file_header(self, fileHandle, detectEndianess):
-        magic = GcdaInfo.read_quad_char(fileHandle)
+    def _load_file_header(self, file_handle, detect_endianess):
+        magic = GcdaInfo.read_quad_char(file_handle)
 
-        if detectEndianess:
+        if detect_endianess:
             if magic == GcdaConst.GCDA_FILE_MAGIC_BIGENDIAN:
                 print("Big Endian GCDA")
                 self.pack_str32 = GcdaConst.PACKUINT32_BIGENDIAN
             elif magic == GcdaConst.GCDA_FILE_MAGIC:
                 print("Little Endian GCDA")
 
-        version = GcdaInfo.read_quad_char(fileHandle)
-        stamp = GcdaInfo.read_uint32(fileHandle)
+        version = GcdaInfo.read_quad_char(file_handle)
+        stamp = GcdaInfo.read_uint32(file_handle)
 
         cwd = None
         unexc_blocks = None
@@ -291,74 +356,74 @@ class GcdaInfo:
 
         return
 
-    def _load_records(self, fileHandle, fileSize):
+    def _load_records(self, file_handle, file_size):
         self.records = []
 
-        curPos = fileHandle.tell()
+        cur_pos = file_handle.tell()
 
-        while curPos < fileSize:
+        while cur_pos < file_size:
 
-            bytesRemaining = fileSize - curPos
-            if bytesRemaining < 8:
+            bytes_remaining = file_size - cur_pos
+            if bytes_remaining < 8:
                 print("Reached the end of file without enough bytes remaining to read a complete record.")
                 print("filename=%s" % self.filename)
-                print("bytesRemaining=%d" % bytesRemaining)
+                print("bytesRemaining=%d" % bytes_remaining)
 
-                extraBuffer = fileHandle.read(bytesRemaining)
-                extraBytes = ""
+                extra_buffer = file_handle.read(bytes_remaining)
+                extra_bytes = ""
 
-                for byte in extraBuffer:
-                    extraBytes += "0x%x " % byte
+                for byte in extra_buffer:
+                    extra_bytes += "0x%x " % byte
 
-                print("extraBytes=%s" % extraBytes)
+                print("extraBytes=%s" % extra_bytes)
 
                 break
 
-            nxtRecord = GcdaInfo.read_record(fileHandle)
+            nxtRecord = GcdaInfo.read_record(file_handle)
 
             if nxtRecord is None:
                 break
 
             self.records.append(nxtRecord)
 
-            curPos = fileHandle.tell()
+            cur_pos = file_handle.tell()
 
         return
 
-    def _save_header(self, fileHandle):
+    def _save_header(self, file_handle):
 
         magic = self.header.magic
         version = self.header.version
         stamp = self.header.stamp
 
-        GcdaInfo.write_quad_char(fileHandle, magic)
-        GcdaInfo.write_quad_char(fileHandle, version)
-        GcdaInfo.write_uint32(fileHandle, stamp)
+        GcdaInfo.write_quad_char(file_handle, magic)
+        GcdaInfo.write_quad_char(file_handle, version)
+        GcdaInfo.write_uint32(file_handle, stamp)
 
         return
 
-    def _save_records(self, fileHandle):
+    def _save_records(self, file_handle):
 
         for record in self.records:
-            GcdaInfo.write_record(fileHandle, record)
+            GcdaInfo.write_record(file_handle, record)
 
     @staticmethod
-    def read_quad_char(fileHandle):
+    def read_quad_char(file_handle):
         """
             uint32:  byte3 byte2 byte1 byte0 | byte0 byte1 byte2 byte3
         """
-        quadByte = fileHandle.read(4)
+        quadByte = file_handle.read(4)
         if len(quadByte) < 4:
             print("ERROR: Problem reading UInt32, not enough bytes left in record. quadByte=%s" % quadByte)
 
         return quadByte
 
     @staticmethod
-    def read_uint32(fileHandle, packStr=GcdaConst.PACKUINT32):
+    def read_uint32(file_handle, packStr=GcdaConst.PACKUINT32):
         """
             uint32:  byte3 byte2 byte1 byte0 | byte0 byte1 byte2 byte3
         """
-        quadByte = fileHandle.read(4)
+        quadByte = file_handle.read(4)
         if len(quadByte) < 4:
             print("ERROR: Problem reading UInt32, not enough bytes left in record. quadByte=%s" % quadByte)
 
@@ -367,47 +432,44 @@ class GcdaInfo:
         return val
 
     @staticmethod
-    def read_uint64(fileHandle, packStr=GcdaConst.PACKUINT32):
+    def read_uint64(file_handle, packStr=GcdaConst.PACKUINT32):
         """
             uint64:  uint32:low uint32:high
         """
-        lowOrder = GcdaInfo.read_uint32(fileHandle, packStr)
-        highOrder = GcdaInfo.read_uint32(fileHandle, packStr)
+        lowOrder = GcdaInfo.read_uint32(file_handle, packStr)
+        highOrder = GcdaInfo.read_uint32(file_handle, packStr)
 
         val = (highOrder << 32) | lowOrder
 
         return val
 
     @staticmethod
-    def read_string(fileHandle, packStr=GcdaConst.PACKUINT32):
+    def read_string(file_handle, packStr=GcdaConst.PACKUINT32):
         """
             string: uint32:0 | uint32:length char* char:0 padding
             padding: | char:0 | char:0 char:0 | char:0 char:0 char:0
         """
 
-        wordLength = GcdaInfo.read_uint32(fileHandle, packStr)
+        wordLength = GcdaInfo.read_uint32(file_handle, packStr)
         strLen = wordLength * 4
 
-        strVal = fileHandle.read(strLen).rstrip(b"\0")
+        strVal = file_handle.read(strLen).rstrip(b"\0")
 
         return strVal
 
     @staticmethod
-    def read_record(fileHandle, packStr=GcdaConst.PACKUINT32):
+    def read_record(file_handle, packStr=GcdaConst.PACKUINT32):
         """
             record: header data
             header: uint32:tag uint32:length
               data: item*
         """
-        recordTag = GcdaInfo.read_uint32(fileHandle, packStr)
-        recordLength = GcdaInfo.read_uint32(fileHandle, packStr)
-        # if recordTag == GcdaConst.GCOV_TAG_COUNTER_BASE or recordTag == GcdaConst.GCOV_TAG_TIME_PROFILER:
-        #     byteLen = recordLength * 8
-        # else:
-        byteLen = recordLength * 4
-        recordItemsData = fileHandle.read(byteLen)
+        record_tag = GcdaInfo.read_uint32(file_handle, packStr)
+        record_length = GcdaInfo.read_uint32(file_handle, packStr)
+        byteLen = record_length * 4
+        recordItemsData = file_handle.read(byteLen)
 
-        return GcdaRecord(recordTag, recordLength, recordItemsData)
+        return GcdaRecord(record_tag, record_length, recordItemsData)
 
     @staticmethod
     def unpack_uint32(buffer, pos, packStr=GcdaConst.PACKUINT32):
@@ -455,23 +517,23 @@ class GcdaInfo:
         return val, cpos
 
     @staticmethod
-    def write_quad_char(fileHandle, quad_char):
+    def write_quad_char(file_handle, quad_char):
         """
             uint32 in quad char format
         """
-        fileHandle.write(quad_char)
+        file_handle.write(quad_char)
         return
 
     @staticmethod
-    def write_uint32(fileHandle, val, packStr=GcdaConst.PACKUINT32):
+    def write_uint32(file_handle, val, packStr=GcdaConst.PACKUINT32):
         """
             uint32:  byte3 byte2 byte1 byte0 | byte0 byte1 byte2 byte3
         """
-        fileHandle.write(struct.pack(packStr, val))
+        file_handle.write(struct.pack(packStr, val))
         return
 
     @staticmethod
-    def write_uint64(fileHandle, val):
+    def write_uint64(file_handle, val):
         """
             uint64:  uint32:low uint32:high
         """
@@ -479,14 +541,14 @@ class GcdaInfo:
         highOrder = (val & GcdaConst.HIGHORDERMASK) >> 32
 
         # Write the low order word
-        GcdaInfo.write_uint32(fileHandle, lowOrder)
+        GcdaInfo.write_uint32(file_handle, lowOrder)
 
         # Write the high order word
-        GcdaInfo.write_uint32(fileHandle, highOrder)
+        GcdaInfo.write_uint32(file_handle, highOrder)
         return
 
     @staticmethod
-    def write_string(fileHandle, val):
+    def write_string(file_handle, val):
         """
             string: uint32:0 | uint32:length char* char:0 padding
             padding: | char:0 | char:0 char:0 | char:0 char:0 char:0
@@ -494,30 +556,30 @@ class GcdaInfo:
         valLen = len(val)
         padlen = valLen % 4
 
-        fileHandle.write(val)
+        file_handle.write(val)
 
         if (val[valLen - 1] == 'x00') and (padlen == 0):
             return
 
-        fileHandle.write(GcdaConst.GCOVIO_STRINGPADDING[padlen])
+        file_handle.write(GcdaConst.GCOVIO_STRINGPADDING[padlen])
 
         return
 
     @staticmethod
-    def write_record(fileHandle, record):
+    def write_record(file_handle, record):
         """
             record: header data
             header: uint32:tag uint32:length
               data: item*
         """
         recordTag = record.tag
-        GcdaInfo.write_uint32(fileHandle, recordTag)
+        GcdaInfo.write_uint32(file_handle, recordTag)
 
         recordLength = record.length
-        GcdaInfo.write_uint32(fileHandle, recordLength)
+        GcdaInfo.write_uint32(file_handle, recordLength)
 
         recordItemsData = record.items_data
-        GcdaInfo.write_uint32(fileHandle, recordItemsData)
+        GcdaInfo.write_uint32(file_handle, recordItemsData)
 
         return
 
@@ -632,9 +694,9 @@ class GcdaInfo:
         return rval
 
 
-
 if __name__ == "__main__":
     gcda = GcdaInfo()
-    gcda.load("data/main.gcda")
+    gcda.load("data/test.gcda")
     gcda.pull_records()
-    a = 1
+    gcda.mutate()
+    gcda.save("data/test_new.gcda")
