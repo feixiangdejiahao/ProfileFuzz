@@ -63,6 +63,7 @@ class GcdaConst:
     GCOV_TAG_ARCS = 0x01430000
     GCOV_TAG_LINES = 0x01450000
     GCOV_TAG_COUNTER_BASE = 0x01a10000
+    GCOV_TAG_TIME_PROFILER = 0x01af0000
     GCOV_TAG_OBJECT_SUMMARY = 0xa1000000  # Obsolete
     GCOV_TAG_PROGRAM_SUMMARY = 0xa3000000
 
@@ -74,6 +75,7 @@ class GcdaConst:
                           GCOV_TAG_ARCS: "GCOV_TAG_ARCS",
                           GCOV_TAG_LINES: "GCOV_TAG_LINES",
                           GCOV_TAG_COUNTER_BASE: "GCOV_TAG_COUNTER_BASE",
+                          GCOV_TAG_TIME_PROFILER: "GCOV_TAG_TIME_PROFILER",
                           GCOV_TAG_OBJECT_SUMMARY: "GCOV_TAG_OBJECT_SUMMARY",
                           GCOV_TAG_PROGRAM_SUMMARY: "GCOV_TAG_PROGRAM_SUMMARY"}
 
@@ -156,6 +158,12 @@ class GcdaRecord:
             tagType = GcdaConst.GCOVIO_TAGTYPE_STR[tagKey]
         strval = "Type=%s Length=%d Data=%r" % (tagType, self.header.length, self.items_data)
         return strval
+
+
+class GCovDataTimeProfilerRecord:
+    def __init__(self, header, time_profiler):
+        self.header = header
+        self.time_profiler = time_profiler
 
 
 class GcdaInfo:
@@ -393,7 +401,9 @@ class GcdaInfo:
         """
         recordTag = GcdaInfo.read_uint32(fileHandle, packStr)
         recordLength = GcdaInfo.read_uint32(fileHandle, packStr)
-
+        # if recordTag == GcdaConst.GCOV_TAG_COUNTER_BASE or recordTag == GcdaConst.GCOV_TAG_TIME_PROFILER:
+        #     byteLen = recordLength * 8
+        # else:
         byteLen = recordLength * 4
         recordItemsData = fileHandle.read(byteLen)
 
@@ -523,6 +533,8 @@ class GcdaInfo:
             swapRecord = GcdaInfo.unpack_function_announcement(header, buffer, cpos, packStr)
         elif tag == GcdaConst.GCOV_TAG_COUNTER_BASE:
             swapRecord = GcdaInfo.unpack_counter_base(header, buffer, cpos, packStr)
+        elif tag == GcdaConst.GCOV_TAG_TIME_PROFILER:
+            swapRecord = GcdaInfo.unpack_time_profiler(header, buffer, cpos, packStr)
         elif tag == GcdaConst.GCOV_TAG_OBJECT_SUMMARY:
             swapRecord = GcdaInfo.unpack_object_summary(header, buffer, cpos, packStr)
         elif tag == GcdaConst.GCOV_TAG_PROGRAM_SUMMARY:
@@ -599,8 +611,30 @@ class GcdaInfo:
 
         return rval
 
+    @classmethod
+    def unpack_time_profiler(cls, header, buffer, pos, packStr):
+        cpos = pos
+
+        counterLength = header.length / 2
+        counterIndex = 0
+
+        counters = []
+
+        while counterIndex < counterLength:
+            nextValue, cpos = GcdaInfo.unpack_uint64(buffer, cpos, packStr)
+            if nextValue == 386547056640:
+                pass
+            counters.append(nextValue)
+            counterIndex += 1
+
+        rval = GCovDataTimeProfilerRecord(header, counters)
+
+        return rval
+
+
 
 if __name__ == "__main__":
     gcda = GcdaInfo()
     gcda.load("data/main.gcda")
     gcda.pull_records()
+    a = 1
