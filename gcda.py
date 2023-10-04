@@ -326,7 +326,7 @@ class GcdaInfo:
         finally:
             if file_handle is not None:
                 file_handle.close()
-
+        print("Saved %s" % self.filename)
         return
 
     def _load_file_header(self, file_handle, detect_endianess):
