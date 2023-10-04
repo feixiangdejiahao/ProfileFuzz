@@ -13,7 +13,7 @@ def init(dir_path):
     os.mkdir(dir_path)
     os.chdir(dir_path)
     pool = Pool(32)
-    for i in range(TEST_NUMBER - 1):
+    for i in range(TEST_NUMBER):
         file_name = "test" + str(i)
         pool.apply_async(generate_compile, (file_name,))
     pool.close()
