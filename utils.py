@@ -20,8 +20,7 @@ def generate(dir_path):
         pool.apply_async(os.system, (cmd,))
 
 
-def gcc_compile(dir_path):
-    os.chdir(dir_path)
+def gcc_compile():
     pool = Pool(32)
     for file_name in os.listdir('.'):
         cmd = "gcc -fprofile-generate " + file_name + "/" + file_name + ".c -o " + file_name + "/" + file_name
@@ -29,16 +28,14 @@ def gcc_compile(dir_path):
         pool.apply_async(os.system, (cmd,))
 
 
-def gcc_recompile(dir_path):
-    os.chdir(dir_path)
+def gcc_recompile():
     pool = Pool(32)
     for file_name in os.listdir('.'):
         cmd = "gcc -fprofile-use " + file_name + "/" + file_name + ".c -o " + file_name + "/" + file_name + "_mut"
         pool.apply_async(os.system, (cmd,))
 
 
-def differential_test(dir_path):
-    os.chdir(dir_path)
+def differential_test():
     os.makedirs("bug_report", exist_ok=True)
     pool = Pool(32)
     bug_report = open("bug_report.txt", "w")
@@ -65,8 +62,7 @@ def differential_test(dir_path):
     pool.close()
 
 
-def mutate(dir_path):
-    os.chdir(dir_path)
+def mutate():
     pool = Pool(32)
     for file_name in os.listdir('.'):
         pool.apply_async(mutate_one_file, (file_name,))
