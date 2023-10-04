@@ -71,19 +71,16 @@ def differential_test():
 def mutate():
     pool = Pool(32)
     for file_name in os.listdir('.'):
-        # pool.apply_async(mutate_one_file, (file_name,))
-        mutate_one_file(file_name)
+        pool.apply_async(mutate_one_file, (file_name,))
+        # mutate_one_file(file_name)
     pool.close()
     pool.join()
 
 
 def mutate_one_file(file_name):
     gcda = GcdaInfo()
-    print("load " + file_name + "/" + file_name + ".gcda")
     gcda.load(file_name + "/" + file_name + ".gcda")
-    print(file_name + ".gcda pull records")
     gcda.pull_records()
-    print(file_name + ".gcda mutate")
     gcda.mutate()
     gcda.save(file_name + "/" + file_name + "_mut-" + file_name + ".gcda")
 
