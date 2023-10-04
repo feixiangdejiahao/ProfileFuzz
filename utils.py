@@ -23,6 +23,7 @@ def init(dir_path):
 def generate_compile(file_name):
     os.mkdir(file_name)
     generate_cmd = "csmith > " + file_name + "/" + file_name + ".c"
+    os.system(generate_cmd)
     compile_cmd = "gcc -fprofile-generate " + file_name + "/" + file_name + ".c -o " + file_name + "/" + file_name
     os.system(compile_cmd)
     execute_cmd = "timeout 30s ./" + file_name + "/" + file_name
