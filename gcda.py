@@ -66,6 +66,9 @@ class GcdaConst:
     GCOV_TAG_ARCS = 0x01430000
     GCOV_TAG_LINES = 0x01450000
     GCOV_TAG_COUNTER_BASE = 0x01a10000
+    GCOV_TAG_INTERVAL = 0x01a30000
+    GCOV_TAG_POW2 = 0x01a50000
+    GCOV_TAG_TOPN = 0x01a70000
     GCOV_TAG_TIME_PROFILER = 0x01af0000
     GCOV_TAG_OBJECT_SUMMARY = 0xa1000000  # Obsolete
     GCOV_TAG_PROGRAM_SUMMARY = 0xa3000000
@@ -167,6 +170,24 @@ class GCovDataTimeProfilerRecord:
     def __init__(self, header, time_profiler):
         self.header = header
         self.time_profiler = time_profiler
+
+
+class GCovDataIntervalRecord:
+    def __init__(self, header, interval):
+        self.header = header
+        self.interval = interval
+
+
+class GCovDataPow2Record:
+    def __init__(self, header, pow2):
+        self.header = header
+        self.pow2 = pow2
+
+
+class GCovDatTopnRecord:
+    def __init__(self, header, topn):
+        self.header = header
+        self.topn = topn
 
 
 class GcdaInfo:
@@ -589,6 +610,12 @@ class GcdaInfo:
             swap_record = GcdaInfo.unpack_function_announcement(header, buffer, cpos, packStr)
         elif tag == GcdaConst.GCOV_TAG_COUNTER_BASE:
             swap_record = GcdaInfo.unpack_counter_base(header, buffer, cpos, packStr)
+        elif tag == GcdaConst.GCOV_TAG_INTERVAL:
+            swap_record = GcdaInfo.unpack_interval(header, buffer, cpos, packStr)
+        elif tag == GcdaConst.GCOV_TAG_POW2:
+            swap_record = GcdaInfo.unpack_pow2(header, buffer, cpos, packStr)
+        elif tag == GcdaConst.GCOV_TAG_TOPN:
+            swap_record = GcdaInfo.unpack_topn(header, buffer, cpos, packStr)
         elif tag == GcdaConst.GCOV_TAG_TIME_PROFILER:
             swap_record = GcdaInfo.unpack_time_profiler(header, buffer, cpos, packStr)
         elif tag == GcdaConst.GCOV_TAG_OBJECT_SUMMARY:
@@ -756,3 +783,62 @@ class GcdaInfo:
         GcdaInfo.write_uint32(file_handle, cfg_checksum)
         return
 
+    @classmethod
+    def unpack_interval(cls, header, buffer, pos, packStr):
+        cpos = pos
+
+        counterLength = header.length / 2
+        counterIndex = 0
+
+        counters = []
+
+        while counterIndex < counterLength:
+            nextValue, cpos = GcdaInfo.unpack_uint64(buffer, cpos, packStr)
+            if nextValue == 386547056640:
+                pass
+            counters.append(nextValue)
+            counterIndex += 1
+
+        rval = GCovDataIntervalRecord(header, counters)
+
+        return rval
+
+    @classmethod
+    def unpack_pow2(cls, header, buffer, pos, packStr):
+        cpos = pos
+
+        counterLength = header.length / 2
+        counterIndex = 0
+
+        counters = []
+
+        while counterIndex < counterLength:
+            nextValue, cpos = GcdaInfo.unpack_uint64(buffer, cpos, packStr)
+            if nextValue == 386547056640:
+                pass
+            counters.append(nextValue)
+            counterIndex += 1
+
+        rval = GCovDataPow2Record(header, counters)
+
+        return rval
+
+    @classmethod
+    def unpack_topn(cls, header, buffer, pos, packStr):
+        cpos = pos
+
+        counterLength = header.length / 2
+        counterIndex = 0
+
+        counters = []
+
+        while counterIndex < counterLength:
+            nextValue, cpos = GcdaInfo.unpack_uint64(buffer, cpos, packStr)
+            if nextValue == 386547056640:
+                pass
+            counters.append(nextValue)
+            counterIndex += 1
+
+        rval = GCovDatTopnRecord(header, counters)
+
+        return rval
