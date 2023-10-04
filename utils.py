@@ -18,6 +18,8 @@ def generate(dir_path):
         os.mkdir(file_name)
         cmd = "csmith > " + file_name + "/" + file_name + ".c"
         pool.apply_async(os.system, (cmd,))
+    pool.close()
+    pool.join()
 
 
 def gcc_compile():
@@ -27,6 +29,8 @@ def gcc_compile():
         cmd += "; ./" + file_name + "/" + file_name
         print(cmd)
         pool.apply_async(os.system, (cmd,))
+    pool.close()
+    pool.join()
 
 
 def gcc_recompile():
@@ -34,6 +38,8 @@ def gcc_recompile():
     for file_name in os.listdir('.'):
         cmd = "gcc -fprofile-use " + file_name + "/" + file_name + ".c -o " + file_name + "/" + file_name + "_mut"
         pool.apply_async(os.system, (cmd,))
+    pool.close()
+    pool.join()
 
 
 def differential_test():
@@ -44,7 +50,7 @@ def differential_test():
         cmd = "./" + file_name + "/" + file_name + " > " + file_name + "/" + file_name + ".txt"
         cmd += "; ./" + file_name + "/" + file_name + "_mut > " + file_name + "/" + file_name + "_mut.txt"
         cmd += "; diff " + file_name + "/" + file_name + ".txt " + file_name + "/" + file_name + "_mut.txt"
-        result = pool.apply_async(os.system, (cmd,)).get()
+        result = os.system(cmd)
         if result != 0:
             os.mkdir("bug_report/" + file_name)
             save_bug_report(file_name)
@@ -58,7 +64,8 @@ def differential_test():
         os.remove(file_name + "/" + file_name + "_mut.txt")
         os.remove(file_name + "/" + file_name + "_mut")
         os.remove(file_name + "/" + file_name + "_mut-" + file_name + ".gcda")
-
+    pool.close()
+    pool.join()
     bug_report.close()
     pool.close()
 
