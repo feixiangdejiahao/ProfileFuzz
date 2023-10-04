@@ -79,6 +79,9 @@ class GcdaConst:
     GCOVIO_TAGTYPE_STR = {GCOV_TAG_FUNCTION: "GCOV_TAG_FUNCTION",
                           GCOV_TAG_BLOCKS: "GCOV_TAG_BLOCKS",
                           GCOV_TAG_ARCS: "GCOV_TAG_ARCS",
+                          GCOV_TAG_INTERVAL: "GCOV_TAG_INTERVAL",
+                          GCOV_TAG_POW2: "GCOV_TAG_POW2",
+                          GCOV_TAG_TOPN: "GCOV_TAG_TOPN",
                           GCOV_TAG_LINES: "GCOV_TAG_LINES",
                           GCOV_TAG_COUNTER_BASE: "GCOV_TAG_COUNTER_BASE",
                           GCOV_TAG_TIME_PROFILER: "GCOV_TAG_TIME_PROFILER",
@@ -480,8 +483,21 @@ class GcdaInfo:
         """
         record_tag = GcdaInfo.read_uint32(file_handle, packStr)
         record_length = GcdaInfo.read_uint32(file_handle, packStr)
-        byteLen = record_length * 4
-        recordItemsData = file_handle.read(byteLen)
+
+        # Convert to hexadecimal
+        hex_str = format(record_length, '08X')
+
+        # Check the first character of the hexadecimal representation
+        if hex_str[0] in "89ABCDEF":
+            # If it corresponds to a negative signed integer
+            record_length = abs(int(hex_str, 16) - 2 ** 32)
+            byteLen = record_length * 4
+            recordItemsData = b'\x00' * byteLen
+        else:
+            # Otherwise, it's a positive signed integer
+            record_length = int(hex_str, 16)
+            byteLen = record_length * 4
+            recordItemsData = file_handle.read(byteLen)
 
         return GcdaRecord(record_tag, record_length, recordItemsData)
 
