@@ -606,6 +606,12 @@ class GcdaInfo:
             GcdaInfo.write_program_summary(file_handle, record)
         elif isinstance(record, GCovDataCounterBaseRecord):
             GcdaInfo.write_counter_base(file_handle, record)
+        elif isinstance(record, GCovDataIntervalRecord):
+            GcdaInfo.write_interval(file_handle, record)
+        elif isinstance(record, GCovDataPow2Record):
+            GcdaInfo.write_pow2(file_handle, record)
+        elif isinstance(record, GCovDatTopnRecord):
+            GcdaInfo.write_topn(file_handle, record)
         elif isinstance(record, GCovDataTimeProfilerRecord):
             GcdaInfo.write_time_profiler(file_handle, record)
         elif isinstance(record, GCovDataObjectSummaryRecord):
@@ -755,11 +761,14 @@ class GcdaInfo:
     def write_counter_base(cls, file_handle, record):
         header = record.header
         counters = record.counters
-
-        GcdaInfo.write_uint32(file_handle, header.tag)
-        GcdaInfo.write_uint32(file_handle, header.length)
-        for counter in counters:
-            GcdaInfo.write_uint64(file_handle, counter)
+        if all(x == 0 for x in counters):
+            GcdaInfo.write_uint32(file_handle, header.tag)
+            GcdaInfo.write_uint32(file_handle, header.length + 2 ** 32)
+        else:
+            GcdaInfo.write_uint32(file_handle, header.tag)
+            GcdaInfo.write_uint32(file_handle, header.length)
+            for counter in counters:
+                GcdaInfo.write_uint64(file_handle, counter)
         return
 
     @classmethod
@@ -767,10 +776,14 @@ class GcdaInfo:
         header = record.header
         time_profiler = record.time_profiler
 
-        GcdaInfo.write_uint32(file_handle, header.tag)
-        GcdaInfo.write_uint32(file_handle, header.length)
-        for time in time_profiler:
-            GcdaInfo.write_uint64(file_handle, time)
+        if all(x == 0 for x in time_profiler):
+            GcdaInfo.write_uint32(file_handle, header.tag)
+            GcdaInfo.write_uint32(file_handle, header.length + 2 ** 32)
+        else:
+            GcdaInfo.write_uint32(file_handle, header.tag)
+            GcdaInfo.write_uint32(file_handle, header.length)
+            for counter in time_profiler:
+                GcdaInfo.write_uint64(file_handle, counter)
         return
 
     @classmethod
@@ -858,3 +871,45 @@ class GcdaInfo:
         rval = GCovDatTopnRecord(header, counters)
 
         return rval
+
+    @classmethod
+    def write_interval(cls, file_handle, record):
+        header = record.header
+        interval = record.interval
+
+        if all(x == 0 for x in interval):
+            GcdaInfo.write_uint32(file_handle, header.tag)
+            GcdaInfo.write_uint32(file_handle, header.length + 2 ** 32)
+        else:
+            GcdaInfo.write_uint32(file_handle, header.tag)
+            GcdaInfo.write_uint32(file_handle, header.length)
+            for counter in interval:
+                GcdaInfo.write_uint64(file_handle, counter)
+
+    @classmethod
+    def write_pow2(cls, file_handle, record):
+        header = record.header
+        pow2 = record.pow2
+
+        if all(x == 0 for x in pow2):
+            GcdaInfo.write_uint32(file_handle, header.tag)
+            GcdaInfo.write_uint32(file_handle, header.length + 2 ** 32)
+        else:
+            GcdaInfo.write_uint32(file_handle, header.tag)
+            GcdaInfo.write_uint32(file_handle, header.length)
+            for counter in pow2:
+                GcdaInfo.write_uint64(file_handle, counter)
+
+    @classmethod
+    def write_topn(cls, file_handle, record):
+        header = record.header
+        topn = record.topn
+
+        if all(x == 0 for x in topn):
+            GcdaInfo.write_uint32(file_handle, header.tag)
+            GcdaInfo.write_uint32(file_handle, header.length + 2 ** 32)
+        else:
+            GcdaInfo.write_uint32(file_handle, header.tag)
+            GcdaInfo.write_uint32(file_handle, header.length)
+            for counter in topn:
+                GcdaInfo.write_uint64(file_handle, counter)
