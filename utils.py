@@ -25,6 +25,7 @@ def gcc_compile():
     for file_name in os.listdir('.'):
         cmd = "gcc -fprofile-generate " + file_name + "/" + file_name + ".c -o " + file_name + "/" + file_name
         cmd += "; ./" + file_name + "/" + file_name
+        print(cmd)
         pool.apply_async(os.system, (cmd,))
 
 
