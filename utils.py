@@ -66,7 +66,6 @@ def differential_test():
     pool.close()
     pool.join()
     bug_report.close()
-    pool.close()
 
 
 def mutate():
@@ -79,8 +78,11 @@ def mutate():
 
 def mutate_one_file(file_name):
     gcda = GcdaInfo()
+    print("load " + file_name + "/" + file_name + ".gcda")
     gcda.load(file_name + "/" + file_name + ".gcda")
+    print(file_name + ".gcda pull records")
     gcda.pull_records()
+    print(file_name + ".gcda mutate")
     gcda.mutate()
     gcda.save(file_name + "/" + file_name + "_mut-" + file_name + ".gcda")
 
