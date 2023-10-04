@@ -7,7 +7,7 @@ from gcda import GcdaInfo
 TEST_NUMBER = 100
 
 
-def generate(dir_path):
+def init(dir_path):
     if os.path.exists(dir_path):
         shutil.rmtree(dir_path)
     os.mkdir(dir_path)
@@ -15,22 +15,23 @@ def generate(dir_path):
     pool = Pool(32)
     for i in range(TEST_NUMBER - 1):
         file_name = "test" + str(i)
-        os.mkdir(file_name)
-        cmd = "csmith > " + file_name + "/" + file_name + ".c"
-        pool.apply_async(os.system, (cmd,))
+        pool.apply_async(generate_compile, (file_name,))
     pool.close()
     pool.join()
 
 
-def gcc_compile():
-    pool = Pool(32)
-    for file_name in os.listdir('.'):
-        cmd = "gcc -fprofile-generate " + file_name + "/" + file_name + ".c -o " + file_name + "/" + file_name
-        cmd += "; ./" + file_name + "/" + file_name
-        print(cmd)
-        pool.apply_async(os.system, (cmd,))
-    pool.close()
-    pool.join()
+def generate_compile(file_name):
+    os.mkdir(file_name)
+    generate_cmd = "csmith > " + file_name + "/" + file_name + ".c"
+    compile_cmd = "gcc -fprofile-generate " + file_name + "/" + file_name + ".c -o " + file_name + "/" + file_name
+    os.system(compile_cmd)
+    execute_cmd = "timeout 30s ./" + file_name + "/" + file_name
+    result = os.system(execute_cmd)
+    while result != 0:
+        os.remove(file_name + "/" + file_name + ".gcda")
+        os.system(generate_cmd)
+        os.system(compile_cmd)
+        result = os.system(execute_cmd)
 
 
 def gcc_recompile():
