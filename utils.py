@@ -71,7 +71,8 @@ def differential_test():
 def mutate():
     pool = Pool(32)
     for file_name in os.listdir('.'):
-        pool.apply_async(mutate_one_file, (file_name,))
+        # pool.apply_async(mutate_one_file, (file_name,))
+        mutate_one_file(file_name)
     pool.close()
     pool.join()
 
