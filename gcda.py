@@ -251,7 +251,7 @@ class GcdaInfo:
         else:
             data = record.time_profiler
         if random.randint(0, 1):
-            data[random.randint(0, len(data) - 1)] = sys.maxsize
+            data[random.randint(0, len(data) - 1)] = 2 ** 32 - 1
         else:
             data[random.randint(0, len(data) - 1)] = 0
 
@@ -281,7 +281,7 @@ class GcdaInfo:
             data = record.counters
         else:
             data = record.time_profiler
-        data[random.randint(0, len(data) - 1)] = random.randint(0, sys.maxsize)
+        data[random.randint(0, len(data) - 1)] = random.randint(0, 2 ** 32)
 
     def pull_records(self):
         """
