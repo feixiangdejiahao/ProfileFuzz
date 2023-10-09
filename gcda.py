@@ -880,20 +880,30 @@ class GcdaInfo:
         header = record.header
         interval = record.interval
 
-        GcdaInfo.write_uint32(file_handle, header.tag)
-        GcdaInfo.write_uint32(file_handle, header.length)
-        for counter in interval:
-            GcdaInfo.write_uint64(file_handle, counter)
+        if len(interval) != 0 and all(x == 0 for x in interval):
+            GcdaInfo.write_uint32(file_handle, header.tag)
+            GcdaInfo.write_uint32(file_handle, -header.length + 2 ** 32)
+        else:
+            GcdaInfo.write_uint32(file_handle, header.tag)
+            GcdaInfo.write_uint32(file_handle, header.length)
+            for counter in interval:
+                GcdaInfo.write_uint64(file_handle, counter)
+        return
 
     @classmethod
     def write_pow2(cls, file_handle, record):
         header = record.header
         pow2 = record.pow2
 
-        GcdaInfo.write_uint32(file_handle, header.tag)
-        GcdaInfo.write_uint32(file_handle, header.length)
-        for counter in pow2:
-            GcdaInfo.write_uint64(file_handle, counter)
+        if len(pow2) != 0 and all(x == 0 for x in pow2):
+            GcdaInfo.write_uint32(file_handle, header.tag)
+            GcdaInfo.write_uint32(file_handle, -header.length + 2 ** 32)
+        else:
+            GcdaInfo.write_uint32(file_handle, header.tag)
+            GcdaInfo.write_uint32(file_handle, header.length)
+            for counter in pow2:
+                GcdaInfo.write_uint64(file_handle, counter)
+        return
 
     @classmethod
     def write_topn(cls, file_handle, record):
