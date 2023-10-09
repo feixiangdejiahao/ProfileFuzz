@@ -44,7 +44,6 @@ def gcc_recompile():
 def differential_test():
     os.makedirs("bug_report", exist_ok=True)
     pool = Pool(32)
-    bug_report = open("bug_report.txt", "w")
     for file_name in os.listdir('.'):
         cmd = "./" + file_name + "/" + file_name + " > " + file_name + "/" + file_name + ".txt"
         cmd += "; ./" + file_name + "/" + file_name + "_mut > " + file_name + "/" + file_name + "_mut.txt"
@@ -54,6 +53,7 @@ def differential_test():
             os.makedirs("bug_report/" + file_name)
             save_bug_report(file_name)
             # write to bug_report.txt
+            bug_report = open("bug_report/" + file_name + "/bug_report.txt", "w")
             bug_report.write(file_name + "\n")
             bug_report.flush()
         else:
