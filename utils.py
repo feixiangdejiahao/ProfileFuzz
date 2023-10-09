@@ -1,5 +1,6 @@
 import os
 import shutil
+from uuid import uuid1
 from multiprocessing import Pool
 
 from gcda import GcdaInfo
@@ -48,16 +49,12 @@ def differential_test():
             continue
         cmd = "./" + file_name + "/" + file_name + " > " + file_name + "/" + file_name + ".txt"
         cmd += "; ./" + file_name + "/" + file_name + "_mut > " + file_name + "/" + file_name + "_mut.txt"
-        cmd += "; diff " + file_name + "/" + file_name + ".txt " + file_name + "/" + file_name + "_mut.txt"
+        os.system(cmd)
+        cmd = "diff " + file_name + "/" + file_name + ".txt " + file_name + "/" + file_name + "_mut.txt"
         result = os.system(cmd)
         if result != 0:
-            print("bug found in " + file_name)
-            os.makedirs("bug_report/" + file_name)
             save_bug_report(file_name)
             # write to bug_report.txt
-            bug_report = open("bug_report/" + file_name + "/bug_report.txt", "w")
-            bug_report.write(file_name + "\n")
-            bug_report.close()
             os.remove(file_name + "/" + file_name + "_mut-" + file_name + ".gcda")
         else:
             os.replace(file_name + "/" + file_name + "_mut-" + file_name + ".gcda",
@@ -67,7 +64,6 @@ def differential_test():
         os.remove(file_name + "/" + file_name + "_mut")
     pool.close()
     pool.join()
-
 
 
 def mutate():
@@ -88,15 +84,16 @@ def mutate_one_file(file_name):
 
 
 def save_bug_report(file_name):
+    uuid = str(uuid1())
     # copy source code
-    shutil.copyfile(file_name + "/" + file_name + ".c", "bug_report/" + file_name + "/" + file_name + ".c")
+    shutil.copyfile(file_name + "/" + file_name + ".c", "bug_report/" + uuid + "/" + file_name + ".c")
     # copy result
-    shutil.copyfile(file_name + "/" + file_name + ".txt", "bug_report/" + file_name + "/" + file_name + ".txt")
+    shutil.copyfile(file_name + "/" + file_name + ".txt", "bug_report/" + uuid + "/" + file_name + ".txt")
     shutil.copyfile(file_name + "/" + file_name + "_mut.txt",
-                    "bug_report/" + file_name + "/" + file_name + "_mut.txt")
+                    "bug_report/" + uuid + "/" + file_name + "_mut.txt")
     # copy gcda file
     shutil.copyfile(file_name + "/" + file_name + "_mut-" + file_name + ".gcda",
-                    "bug_report/" + file_name + "/" + file_name + "_mut-" + file_name + ".gcda")
+                    "bug_report/" + uuid + "/" + file_name + "_mut-" + file_name + ".gcda")
     # copy executable file
-    shutil.copyfile(file_name + "/" + file_name + "_mut", "bug_report/" + file_name + "/" + file_name + "_mut")
-    shutil.copyfile(file_name + "/" + file_name, "bug_report/" + file_name + "/" + file_name)
+    shutil.copyfile(file_name + "/" + file_name + "_mut", "bug_report/" + uuid + "/" + file_name + "_mut")
+    shutil.copyfile(file_name + "/" + file_name, "bug_report/" + uuid + "/" + file_name)
