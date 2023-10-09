@@ -155,9 +155,9 @@ class GcdaRecord:
             NullString => [Length: 0]
     """
 
-    def __init__(self, tag, length, itemsData):
+    def __init__(self, tag, length, items_data):
         self.header = GcdaRecordHeader(tag, length)
-        self.items_data = itemsData
+        self.items_data = items_data
         return
 
     def __str__(self):
@@ -483,23 +483,26 @@ class GcdaInfo:
         """
         record_tag = GcdaInfo.read_uint32(file_handle, packStr)
         record_length = GcdaInfo.read_uint32(file_handle, packStr)
-
         # Convert to hexadecimal
         hex_str = format(record_length, '08X')
 
-        # Check the first character of the hexadecimal representation
-        if hex_str[0] in "89ABCDEF":
-            # If it corresponds to a negative signed integer
-            record_length = abs(int(hex_str, 16) - 2 ** 32)
-            byteLen = record_length * 4
-            recordItemsData = b'\x00' * byteLen
+        if record_tag == GcdaConst.GCOV_TAG_COUNTER_BASE or record_tag == GcdaConst.GCOV_TAG_TIME_PROFILER or record_tag == GcdaConst.GCOV_TAG_INTERVAL or record_tag == GcdaConst.GCOV_TAG_POW2:
+            if hex_str[0] in "89ABCDEF":
+                # If it corresponds to a negative signed integer
+                record_length = abs(int(hex_str, 16) - 2 ** 32)
+                byte_len = record_length * 4
+                record_items_data = b'\x00' * byte_len
+            else:
+                # Otherwise, it's a positive signed integer
+                record_length = int(hex_str, 16)
+                byte_len = record_length * 4
+                record_items_data = file_handle.read(byte_len)
         else:
-            # Otherwise, it's a positive signed integer
             record_length = int(hex_str, 16)
-            byteLen = record_length * 4
-            recordItemsData = file_handle.read(byteLen)
+            byte_len = record_length * 4
+            record_items_data = file_handle.read(byte_len)
 
-        return GcdaRecord(record_tag, record_length, recordItemsData)
+        return GcdaRecord(record_tag, record_length, record_items_data)
 
     @staticmethod
     def unpack_uint32(buffer, pos, packStr=GcdaConst.PACKUINT32):
@@ -877,39 +880,27 @@ class GcdaInfo:
         header = record.header
         interval = record.interval
 
-        if len(interval) != 0 and all(x == 0 for x in interval):
-            GcdaInfo.write_uint32(file_handle, header.tag)
-            GcdaInfo.write_uint32(file_handle, -header.length + 2 ** 32)
-        else:
-            GcdaInfo.write_uint32(file_handle, header.tag)
-            GcdaInfo.write_uint32(file_handle, header.length)
-            for counter in interval:
-                GcdaInfo.write_uint64(file_handle, counter)
+        GcdaInfo.write_uint32(file_handle, header.tag)
+        GcdaInfo.write_uint32(file_handle, header.length)
+        for counter in interval:
+            GcdaInfo.write_uint64(file_handle, counter)
 
     @classmethod
     def write_pow2(cls, file_handle, record):
         header = record.header
         pow2 = record.pow2
 
-        if len(pow2) != 0 and all(x == 0 for x in pow2):
-            GcdaInfo.write_uint32(file_handle, header.tag)
-            GcdaInfo.write_uint32(file_handle, -header.length + 2 ** 32)
-        else:
-            GcdaInfo.write_uint32(file_handle, header.tag)
-            GcdaInfo.write_uint32(file_handle, header.length)
-            for counter in pow2:
-                GcdaInfo.write_uint64(file_handle, counter)
+        GcdaInfo.write_uint32(file_handle, header.tag)
+        GcdaInfo.write_uint32(file_handle, header.length)
+        for counter in pow2:
+            GcdaInfo.write_uint64(file_handle, counter)
 
     @classmethod
     def write_topn(cls, file_handle, record):
         header = record.header
         topn = record.topn
 
-        if len(topn) != 0 and all(x == 0 for x in topn):
-            GcdaInfo.write_uint32(file_handle, header.tag)
-            GcdaInfo.write_uint32(file_handle, -header.length + 2 ** 32)
-        else:
-            GcdaInfo.write_uint32(file_handle, header.tag)
-            GcdaInfo.write_uint32(file_handle, header.length)
-            for counter in topn:
-                GcdaInfo.write_uint64(file_handle, counter)
+        GcdaInfo.write_uint32(file_handle, header.tag)
+        GcdaInfo.write_uint32(file_handle, header.length)
+        for counter in topn:
+            GcdaInfo.write_uint64(file_handle, counter)
