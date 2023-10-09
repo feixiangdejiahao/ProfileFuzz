@@ -51,7 +51,7 @@ def differential_test():
         cmd += "; diff " + file_name + "/" + file_name + ".txt " + file_name + "/" + file_name + "_mut.txt"
         result = os.system(cmd)
         if result != 0:
-            os.mkdir("bug_report/" + file_name)
+            os.makedirs("bug_report/" + file_name)
             save_bug_report(file_name)
             # write to bug_report.txt
             bug_report.write(file_name + "\n")
