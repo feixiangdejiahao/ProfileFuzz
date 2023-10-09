@@ -761,9 +761,9 @@ class GcdaInfo:
     def write_counter_base(cls, file_handle, record):
         header = record.header
         counters = record.counters
-        if all(x == 0 for x in counters):
+        if len(counters) != 0 and all(x == 0 for x in counters):
             GcdaInfo.write_uint32(file_handle, header.tag)
-            GcdaInfo.write_uint32(file_handle, header.length + 2 ** 32)
+            GcdaInfo.write_uint32(file_handle, -header.length + 2 ** 32)
         else:
             GcdaInfo.write_uint32(file_handle, header.tag)
             GcdaInfo.write_uint32(file_handle, header.length)
@@ -778,7 +778,7 @@ class GcdaInfo:
 
         if all(x == 0 for x in time_profiler):
             GcdaInfo.write_uint32(file_handle, header.tag)
-            GcdaInfo.write_uint32(file_handle, header.length + 2 ** 32)
+            GcdaInfo.write_uint32(file_handle, -header.length + 2 ** 32)
         else:
             GcdaInfo.write_uint32(file_handle, header.tag)
             GcdaInfo.write_uint32(file_handle, header.length)
@@ -877,9 +877,9 @@ class GcdaInfo:
         header = record.header
         interval = record.interval
 
-        if all(x == 0 for x in interval):
+        if len(interval) != 0 and all(x == 0 for x in interval):
             GcdaInfo.write_uint32(file_handle, header.tag)
-            GcdaInfo.write_uint32(file_handle, header.length + 2 ** 32)
+            GcdaInfo.write_uint32(file_handle, -header.length + 2 ** 32)
         else:
             GcdaInfo.write_uint32(file_handle, header.tag)
             GcdaInfo.write_uint32(file_handle, header.length)
@@ -891,9 +891,9 @@ class GcdaInfo:
         header = record.header
         pow2 = record.pow2
 
-        if all(x == 0 for x in pow2):
+        if len(pow2) != 0 and all(x == 0 for x in pow2):
             GcdaInfo.write_uint32(file_handle, header.tag)
-            GcdaInfo.write_uint32(file_handle, header.length + 2 ** 32)
+            GcdaInfo.write_uint32(file_handle, -header.length + 2 ** 32)
         else:
             GcdaInfo.write_uint32(file_handle, header.tag)
             GcdaInfo.write_uint32(file_handle, header.length)
@@ -905,9 +905,9 @@ class GcdaInfo:
         header = record.header
         topn = record.topn
 
-        if all(x == 0 for x in topn):
+        if len(topn) != 0 and all(x == 0 for x in topn):
             GcdaInfo.write_uint32(file_handle, header.tag)
-            GcdaInfo.write_uint32(file_handle, header.length + 2 ** 32)
+            GcdaInfo.write_uint32(file_handle, -header.length + 2 ** 32)
         else:
             GcdaInfo.write_uint32(file_handle, header.tag)
             GcdaInfo.write_uint32(file_handle, header.length)
