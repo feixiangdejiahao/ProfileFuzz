@@ -4,7 +4,7 @@ from multiprocessing import Pool
 
 from gcda import GcdaInfo
 
-TEST_NUMBER = 100
+TEST_NUMBER = 1000
 
 
 def init(dir_path):
@@ -42,30 +42,32 @@ def gcc_recompile():
 
 
 def differential_test():
-    os.makedirs("bug_report", exist_ok=True)
     pool = Pool(32)
     for file_name in os.listdir('.'):
+        if "test" not in file_name:
+            continue
         cmd = "./" + file_name + "/" + file_name + " > " + file_name + "/" + file_name + ".txt"
         cmd += "; ./" + file_name + "/" + file_name + "_mut > " + file_name + "/" + file_name + "_mut.txt"
         cmd += "; diff " + file_name + "/" + file_name + ".txt " + file_name + "/" + file_name + "_mut.txt"
         result = os.system(cmd)
         if result != 0:
+            print("bug found in " + file_name)
             os.makedirs("bug_report/" + file_name)
             save_bug_report(file_name)
             # write to bug_report.txt
             bug_report = open("bug_report/" + file_name + "/bug_report.txt", "w")
             bug_report.write(file_name + "\n")
-            bug_report.flush()
+            bug_report.close()
+            os.remove(file_name + "/" + file_name + "_mut-" + file_name + ".gcda")
         else:
             os.replace(file_name + "/" + file_name + "_mut-" + file_name + ".gcda",
                        file_name + "/" + file_name + ".gcda")
         os.remove(file_name + "/" + file_name + ".txt")
         os.remove(file_name + "/" + file_name + "_mut.txt")
         os.remove(file_name + "/" + file_name + "_mut")
-        os.remove(file_name + "/" + file_name + "_mut-" + file_name + ".gcda")
     pool.close()
     pool.join()
-    bug_report.close()
+
 
 
 def mutate():

@@ -1,7 +1,7 @@
 from utils import *
 
 dir_path = "output"
-MUTATE_NUMBER = 1000
+MUTATE_NUMBER = 10000
 if __name__ == "__main__":
     init(dir_path)
     for i in range(MUTATE_NUMBER):
