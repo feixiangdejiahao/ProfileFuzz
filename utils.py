@@ -1,105 +1,79 @@
 import os
 import shutil
+import uuid
 from multiprocessing import Pool
 
 from gcda import GcdaInfo
 
-TEST_NUMBER = 1000
+TEST_NUMBER = 10
 
 
-def init(dir_path):
+def init(dir_path, file_name):
     if os.path.exists(dir_path):
         shutil.rmtree(dir_path)
-    os.mkdir(dir_path)
-    pool = Pool(32)
-    gcda_list = []
-    for i in range(TEST_NUMBER):
-        file_name = "test" + str(i)
-        result = pool.apply_async(generate_compile, (dir_path, file_name,))
-        gcda_list.append(result.get())
-        # generate_compile(file_name)
-    pool.close()
-    pool.join()
-    return gcda_list
+    file_name = "test" + file_name
+    os.makedirs(dir_path + "/" + file_name)
+    os.chdir(dir_path + "/" + file_name)
+    return generate_compile(file_name)
 
 
-def generate_compile(dir_path, file_name):
-    dir_path = dir_path + "/" + file_name
-    os.mkdir(dir_path)
-    generate_cmd = "csmith > " + dir_path + "/" + file_name + ".c"
-    compile_cmd = "gcc -fprofile-generate " + dir_path + "/" + file_name + ".c -o " + dir_path + "/" + file_name
-    execute_cmd = "timeout 30s ./" + dir_path + "/" + file_name
+def generate_compile(file_name):
+    generate_cmd = "csmith > " + file_name + ".c"
+    compile_cmd = "gcc -fprofile-generate " + file_name + ".c -o " + file_name
+    execute_cmd = "timeout 30s ./" + file_name
     result = 1
     while result != 0:
         os.system(generate_cmd)
         os.system(compile_cmd)
         result = os.system(execute_cmd)
-    cmd = "./" + dir_path + "/" + file_name + " > " + dir_path + "/" + file_name + ".txt"
+    cmd = "./" + file_name + " > " + file_name + ".txt"
     os.system(cmd)
-    shutil.copyfile(dir_path + "/" + file_name + ".gcda", dir_path + "/" + file_name + "_mut-" + file_name + ".gcda")
+    shutil.copyfile(file_name + ".gcda", file_name + "_mut-" + file_name + ".gcda")
     gcda = GcdaInfo()
-    gcda.load(dir_path + "/" + file_name + "_mut-" + file_name + ".gcda")
+    gcda.load(file_name + "_mut-" + file_name + ".gcda")
     gcda.pull_records()
     return gcda
 
 
-def gcc_recompile(gcda_list):
-    pool = Pool(32)
-    for gcda in gcda_list:
-        pool.apply_async(recompile_one_file, (gcda,))
-    pool.close()
-    pool.join()
-
-
-def recompile_one_file(gcda):
-    cmd = "gcc -fprofile-use " + gcda.file_path + "/" + gcda.source_file_name + ".c -o " + gcda.file_path + "/" + gcda.source_file_name + "_mut"
+def gcc_recompile(gcda):
+    cmd = "gcc -fprofile-use " + gcda.source_file_name + ".c -o " + gcda.source_file_name + "_mut"
     result = os.system(cmd)
     while result != 0:
-        mutate_single_gcda(gcda)
+        init_gcda = GcdaInfo()
+        init_gcda.load(gcda.source_file_name + ".gcda")
+        init_gcda.pull_records()
+        mutate(init_gcda)
+        init_gcda.save(gcda.source_file_name + "_mut-" + gcda.source_file_name + ".gcda")
         result = os.system(cmd)
 
 
-def differential_test(gcda_list):
-    pool = Pool(32)
-    for gcda in gcda_list:
-        cmd = "./" + gcda.file_path + "/" + gcda.source_file_name + "_mut > " + gcda.file_path + "/" + gcda.source_file_name + "_mut.txt"
-        os.system(cmd)
-        cmd = "diff " + gcda.file_path + "/" + gcda.source_file_name + ".txt " + gcda.file_path + "/" + gcda.source_file_name + "_mut.txt"
-        result = os.system(cmd)
-        if result != 0:
-            print("bug found in " + gcda.source_file_name)
-            os.makedirs("bug_report/" + gcda.source_file_name)
-            save_bug_report(gcda.source_file_name)
-            # write to bug_report.txt
-        os.remove(gcda.file_path + "/" + gcda.source_file_name + "_mut.txt")
-    pool.close()
-    pool.join()
+def differential_test(gcda):
+    cmd = "./" + gcda.source_file_name + "_mut > " + gcda.source_file_name + "_mut.txt"
+    os.system(cmd)
+    cmd = "diff " + gcda.source_file_name + ".txt " + gcda.source_file_name + "_mut.txt"
+    result = os.system(cmd)
+    if result != 0:
+        print("bug found in " + gcda.source_file_name)
+        save_bug_report(gcda.source_file_name)
+        # write to bug_report.txt
 
 
-def mutate(gcda_list):
-    pool = Pool(32)
-    for gcda in gcda_list:
-        pool.apply_async(mutate_single_gcda, (gcda,))
-        # mutate_one_file(file_name)
-    pool.close()
-    pool.join()
-
-
-def mutate_single_gcda(gcda):
+def mutate(gcda):
     gcda.mutate()
     gcda.save()
 
 
 def save_bug_report(file_name):
+    os.makedirs("../bug_report/" + file_name)
     # copy source code
-    shutil.copyfile(file_name + "/" + file_name + ".c", "bug_report/" + file_name + "/" + file_name + ".c")
+    shutil.copyfile(file_name + ".c", "../bug_report/" + file_name + "/" + file_name + ".c")
     # copy result
-    shutil.copyfile(file_name + "/" + file_name + ".txt", "bug_report/" + file_name + "/" + file_name + ".txt")
-    shutil.copyfile(file_name + "/" + file_name + "_mut.txt",
-                    "bug_report/" + file_name + "/" + file_name + "_mut.txt")
+    shutil.copyfile(file_name + ".txt", "../bug_report/" + file_name + "/" + file_name + ".txt")
+    shutil.copyfile(file_name + "_mut.txt",
+                    "../bug_report/" + file_name + "/" + file_name + "_mut.txt")
     # copy gcda file
-    shutil.copyfile(file_name + "/" + file_name + "_mut-" + file_name + ".gcda",
-                    "bug_report/" + file_name + "/" + file_name + "_mut-" + file_name + ".gcda")
+    shutil.copyfile(file_name + "_mut-" + file_name + ".gcda",
+                    "../bug_report/" + file_name + "/" + file_name + "_mut-" + file_name + ".gcda")
     # copy executable file
-    shutil.copyfile(file_name + "/" + file_name + "_mut", "bug_report/" + file_name + "/" + file_name + "_mut")
-    shutil.copyfile(file_name + "/" + file_name, "bug_report/" + file_name + "/" + file_name)
+    shutil.copyfile(file_name + "_mut", "../bug_report/" + file_name + "/" + file_name + "_mut")
+    shutil.copyfile(file_name, "../bug_report/" + file_name + "/" + file_name)
