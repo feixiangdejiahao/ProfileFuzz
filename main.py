@@ -1,10 +1,10 @@
 from utils import *
 
 dir_path = "output"
-MUTATE_NUMBER = 10000
+MUTATE_NUMBER = 100
 if __name__ == "__main__":
-    init(dir_path)
+    gcda_list = init(dir_path)
     for i in range(MUTATE_NUMBER):
-        mutate()
-        gcc_recompile()
-        differential_test()
+        mutate(gcda_list)
+        gcc_recompile(gcda_list)
+        differential_test(gcda_list)

@@ -222,6 +222,8 @@ class GcdaInfo:
     """
 
     def __init__(self, filename=None, header=None, records=None):
+        self.source_file_name = None
+        self.file_path = None
         self.pack_str32 = GcdaConst.PACKUINT32
         self.filename = filename
         self.header = header
@@ -324,6 +326,8 @@ class GcdaInfo:
     def load(self, filename=None, detectEndianess=True):
         if filename is not None:
             self.filename = filename
+            self.file_path = os.path.dirname(filename)
+            self.source_file_name = os.path.basename(filename).split('-')[1].split('.')[0]
 
         if self.filename is None:
             raise IOError("GCovIO: load 'Filename' not set")
