@@ -261,10 +261,17 @@ class GcdaInfo:
             data = record.counters
         else:
             data = record.time_profiler
+        index = random.randint(0, len(data) - 1)
         if random.randint(0, 1):
-            data[random.randint(0, len(data) - 1)] += 1
+            if data[index] == 2 ** 32 - 1:
+                data[index] -= 1
+            else:
+                data[index] += 1
         else:
-            data[random.randint(0, len(data) - 1)] -= 1
+            if data[index] == 0:
+                data[index] += 1
+            else:
+                data[index] -= 1
         pass
 
     @staticmethod

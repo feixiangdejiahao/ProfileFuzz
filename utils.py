@@ -1,11 +1,11 @@
 import os
 import shutil
-from uuid import uuid1
 from multiprocessing import Pool
+from uuid import uuid1
 
 from gcda import GcdaInfo
 
-TEST_NUMBER = 1000
+TEST_NUMBER = 100
 
 
 def init(dir_path):
@@ -17,6 +17,7 @@ def init(dir_path):
     for i in range(TEST_NUMBER):
         file_name = "test" + str(i)
         pool.apply_async(generate_compile, (file_name,))
+        # generate_compile(file_name)
     pool.close()
     pool.join()
 
@@ -31,6 +32,9 @@ def generate_compile(file_name):
         os.system(generate_cmd)
         os.system(compile_cmd)
         result = os.system(execute_cmd)
+    cmd = "./" + file_name + "/" + file_name + " > " + file_name + "/" + file_name + ".txt"
+    os.system(cmd)
+    shutil.copyfile(file_name + "/" + file_name + ".gcda", file_name + "/" + file_name + "_mut-" + file_name + ".gcda")
 
 
 def gcc_recompile():
@@ -38,6 +42,7 @@ def gcc_recompile():
     for file_name in os.listdir('.'):
         cmd = "gcc -fprofile-use " + file_name + "/" + file_name + ".c -o " + file_name + "/" + file_name + "_mut"
         pool.apply_async(os.system, (cmd,))
+        # os.system(cmd)
     pool.close()
     pool.join()
 
@@ -47,21 +52,19 @@ def differential_test():
     for file_name in os.listdir('.'):
         if "test" not in file_name:
             continue
-        cmd = "./" + file_name + "/" + file_name + " > " + file_name + "/" + file_name + ".txt"
-        cmd += "; ./" + file_name + "/" + file_name + "_mut > " + file_name + "/" + file_name + "_mut.txt"
+        cmd = "./" + file_name + "/" + file_name + "_mut > " + file_name + "/" + file_name + "_mut.txt"
         os.system(cmd)
         cmd = "diff " + file_name + "/" + file_name + ".txt " + file_name + "/" + file_name + "_mut.txt"
         result = os.system(cmd)
         if result != 0:
+            print("bug found in " + file_name)
+            os.makedirs("bug_report/" + file_name)
             save_bug_report(file_name)
             # write to bug_report.txt
-            os.remove(file_name + "/" + file_name + "_mut-" + file_name + ".gcda")
-        else:
-            os.replace(file_name + "/" + file_name + "_mut-" + file_name + ".gcda",
-                       file_name + "/" + file_name + ".gcda")
-        os.remove(file_name + "/" + file_name + ".txt")
+            bug_report = open("bug_report/" + file_name + "/bug_report.txt", "w")
+            bug_report.write(file_name + "\n")
+            bug_report.close()
         os.remove(file_name + "/" + file_name + "_mut.txt")
-        os.remove(file_name + "/" + file_name + "_mut")
     pool.close()
     pool.join()
 
@@ -77,7 +80,7 @@ def mutate():
 
 def mutate_one_file(file_name):
     gcda = GcdaInfo()
-    gcda.load(file_name + "/" + file_name + ".gcda")
+    gcda.load(file_name + "/" + file_name + "_mut-" + file_name + ".gcda")
     gcda.pull_records()
     gcda.mutate()
     gcda.save(file_name + "/" + file_name + "_mut-" + file_name + ".gcda")
