@@ -4,7 +4,7 @@ from multiprocessing import Pool
 
 from gcda import GcdaInfo
 
-TEST_NUMBER = 100
+TEST_NUMBER = 1000
 
 
 def init(dir_path):

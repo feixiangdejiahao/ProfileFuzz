@@ -1,7 +1,7 @@
 from utils import *
 
 dir_path = "output"
-MUTATE_NUMBER = 100
+MUTATE_NUMBER = 10000
 if __name__ == "__main__":
     gcda_list = init(dir_path)
     for i in range(MUTATE_NUMBER):
