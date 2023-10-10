@@ -15,8 +15,8 @@ def init(dir_path):
     gcda_list = []
     for i in range(TEST_NUMBER):
         file_name = "test" + str(i)
-        gcda = pool.apply_async(generate_compile, (dir_path, file_name,))
-        gcda_list.append(gcda)
+        result = pool.apply_async(generate_compile, (dir_path, file_name,))
+        gcda_list.append(result.get())
         # generate_compile(file_name)
     pool.close()
     pool.join()
