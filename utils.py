@@ -9,8 +9,6 @@ TEST_NUMBER = 10
 
 
 def init(dir_path, file_name):
-    if os.path.exists(dir_path):
-        shutil.rmtree(dir_path)
     file_name = "test" + file_name
     os.makedirs(dir_path + "/" + file_name)
     os.chdir(dir_path + "/" + file_name)
