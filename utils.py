@@ -1,11 +1,6 @@
 import os
 import shutil
-import uuid
-from multiprocessing import Pool
-
 from gcda import GcdaInfo
-
-TEST_NUMBER = 10
 
 
 def init(dir_path, file_name):
