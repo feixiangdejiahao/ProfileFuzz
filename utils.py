@@ -1,6 +1,7 @@
 import os
 import shutil
-from gcda import GcdaInfo
+
+from GcdaInfo import GcdaInfo
 
 
 def init(dir_path, file_name):

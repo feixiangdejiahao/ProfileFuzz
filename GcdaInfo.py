@@ -3,6 +3,8 @@ import random
 import struct
 import sys
 
+import GcovConst
+
 
 class GCovDataFunctionAnnouncementRecord:
     """
@@ -50,57 +52,6 @@ class GCovDataProgramSummaryRecord:
         return
 
 
-class GcdaConst:
-    GCOV_VERSION_3_4_0 = 0x30400
-    GCOV_VERSION_3_3_0 = 0x30300
-
-    BBG_FILE_MAGIC = b'gbbg'
-    GCNO_FILE_MAGIC = b'oncg'
-    GCDA_FILE_MAGIC = b'adcg'
-
-    GCNO_FILE_MAGIC_BIGENDIAN = b'gcno'
-    GCDA_FILE_MAGIC_BIGENDIAN = b'gcda'
-
-    GCOV_TAG_FUNCTION = 0x01000000
-    GCOV_TAG_BLOCKS = 0x01410000
-    GCOV_TAG_ARCS = 0x01430000
-    GCOV_TAG_LINES = 0x01450000
-    GCOV_TAG_COUNTER_BASE = 0x01a10000
-    GCOV_TAG_INTERVAL = 0x01a30000
-    GCOV_TAG_POW2 = 0x01a50000
-    GCOV_TAG_TOPN = 0x01a70000
-    GCOV_TAG_TIME_PROFILER = 0x01af0000
-    GCOV_TAG_OBJECT_SUMMARY = 0xa1000000  # Obsolete
-    GCOV_TAG_PROGRAM_SUMMARY = 0xa3000000
-
-    # GCNO_SOURCEFILE = 0x80000001
-    # GCNO_FUNCTIONNAME = 0x80000002
-
-    GCOVIO_TAGTYPE_STR = {GCOV_TAG_FUNCTION: "GCOV_TAG_FUNCTION",
-                          GCOV_TAG_BLOCKS: "GCOV_TAG_BLOCKS",
-                          GCOV_TAG_ARCS: "GCOV_TAG_ARCS",
-                          GCOV_TAG_INTERVAL: "GCOV_TAG_INTERVAL",
-                          GCOV_TAG_POW2: "GCOV_TAG_POW2",
-                          GCOV_TAG_TOPN: "GCOV_TAG_TOPN",
-                          GCOV_TAG_LINES: "GCOV_TAG_LINES",
-                          GCOV_TAG_COUNTER_BASE: "GCOV_TAG_COUNTER_BASE",
-                          GCOV_TAG_TIME_PROFILER: "GCOV_TAG_TIME_PROFILER",
-                          GCOV_TAG_OBJECT_SUMMARY: "GCOV_TAG_OBJECT_SUMMARY",
-                          GCOV_TAG_PROGRAM_SUMMARY: "GCOV_TAG_PROGRAM_SUMMARY"}
-
-    PACKUINT32 = "<I"
-    PACKUINT32_BIGENDIAN = ">I"
-
-    LOWORDERMASK = 0x00000000ffffffff
-    HIGHORDERMASK = 0xffffffff00000000
-
-    GCOV_FLAG_ARC_ON_TREE = 1
-    GCOV_FLAG_ARC_FAKE = 2
-    GCOV_FLAG_ARC_FALLTHROUGH = 4
-
-    GCOVIO_STRINGPADDING = ['\x00\x00\x00\x00', '\x00\x00\x00', '\x00\x00', '\x00']
-
-
 class GcdaFileHeader:
     """
         uint32:magic
@@ -109,12 +60,10 @@ class GcdaFileHeader:
         uint32:unexec_blocks
     """
 
-    def __init__(self, magic, version, stamp, cwd=None, unexec_blocks=None):
+    def __init__(self, magic, version, stamp):
         self.magic = magic
         self.version = version
         self.stamp = stamp
-        self.cwd = cwd
-        self.unexec_blocks = unexec_blocks
         return
 
 
@@ -163,8 +112,8 @@ class GcdaRecord:
     def __str__(self):
         tagKey = self.header.tag
         tagType = str(tagKey)
-        if tagKey in GcdaConst.GCOVIO_TAGTYPE_STR:
-            tagType = GcdaConst.GCOVIO_TAGTYPE_STR[tagKey]
+        if tagKey in GcovConst.GCOVIO_TAGTYPE_STR:
+            tagType = GcovConst.GCOVIO_TAGTYPE_STR[tagKey]
         strval = "Type=%s Length=%d Data=%r" % (tagType, self.header.length, self.items_data)
         return strval
 
@@ -224,7 +173,7 @@ class GcdaInfo:
     def __init__(self, filename=None, header=None, records=None):
         self.source_file_name = None
         self.file_path = None
-        self.pack_str32 = GcdaConst.PACKUINT32
+        self.pack_str32 = GcovConst.PACKUINT32
         self.filename = filename
         self.header = header
         self.records = records
@@ -368,19 +317,16 @@ class GcdaInfo:
         magic = GcdaInfo.read_quad_char(file_handle)
 
         if detect_endianess:
-            if magic == GcdaConst.GCDA_FILE_MAGIC_BIGENDIAN:
+            if magic == GcovConst.GCDA_FILE_MAGIC_BIGENDIAN:
                 print("Big Endian GCDA")
-                self.pack_str32 = GcdaConst.PACKUINT32_BIGENDIAN
-            elif magic == GcdaConst.GCDA_FILE_MAGIC:
+                self.pack_str32 = GcovConst.PACKUINT32_BIGENDIAN
+            elif magic == GcovConst.GCDA_FILE_MAGIC:
                 print("Little Endian GCDA")
 
         version = GcdaInfo.read_quad_char(file_handle)
         stamp = GcdaInfo.read_uint32(file_handle)
 
-        cwd = None
-        unexc_blocks = None
-
-        self.header = GcdaFileHeader(magic, version, stamp, cwd=cwd, unexec_blocks=unexc_blocks)
+        self.header = GcdaFileHeader(magic, version, stamp)
 
         return
 
@@ -444,10 +390,9 @@ class GcdaInfo:
         if len(quadByte) < 4:
             print("ERROR: Problem reading UInt32, not enough bytes left in record. quadByte=%s" % quadByte)
 
-        return quadByte
 
     @staticmethod
-    def read_uint32(file_handle, packStr=GcdaConst.PACKUINT32):
+    def read_uint32(file_handle, packStr=GcovConst.PACKUINT32):
         """
             uint32:  byte3 byte2 byte1 byte0 | byte0 byte1 byte2 byte3
         """
@@ -460,7 +405,7 @@ class GcdaInfo:
         return val
 
     @staticmethod
-    def read_uint64(file_handle, packStr=GcdaConst.PACKUINT32):
+    def read_uint64(file_handle, packStr=GcovConst.PACKUINT32):
         """
             uint64:  uint32:low uint32:high
         """
@@ -472,7 +417,7 @@ class GcdaInfo:
         return val
 
     @staticmethod
-    def read_string(file_handle, packStr=GcdaConst.PACKUINT32):
+    def read_string(file_handle, packStr=GcovConst.PACKUINT32):
         """
             string: uint32:0 | uint32:length char* char:0 padding
             padding: | char:0 | char:0 char:0 | char:0 char:0 char:0
@@ -486,7 +431,7 @@ class GcdaInfo:
         return strVal
 
     @staticmethod
-    def read_record(file_handle, packStr=GcdaConst.PACKUINT32):
+    def read_record(file_handle, packStr=GcovConst.PACKUINT32):
         """
             record: header data
             header: uint32:tag uint32:length
@@ -497,7 +442,7 @@ class GcdaInfo:
         # Convert to hexadecimal
         hex_str = format(record_length, '08X')
 
-        if record_tag == GcdaConst.GCOV_TAG_COUNTER_BASE or record_tag == GcdaConst.GCOV_TAG_TIME_PROFILER or record_tag == GcdaConst.GCOV_TAG_INTERVAL or record_tag == GcdaConst.GCOV_TAG_POW2:
+        if record_tag == GcovConst.GCOV_TAG_COUNTER_BASE or record_tag == GcovConst.GCOV_TAG_TIME_PROFILER or record_tag == GcovConst.GCOV_TAG_INTERVAL or record_tag == GcovConst.GCOV_TAG_POW2:
             if hex_str[0] in "89ABCDEF":
                 # If it corresponds to a negative signed integer
                 record_length = abs(int(hex_str, 16) - 2 ** 32)
@@ -516,7 +461,7 @@ class GcdaInfo:
         return GcdaRecord(record_tag, record_length, record_items_data)
 
     @staticmethod
-    def unpack_uint32(buffer, pos, packStr=GcdaConst.PACKUINT32):
+    def unpack_uint32(buffer, pos, packStr=GcovConst.PACKUINT32):
 
         # Note: The comma is important because the return type from struct.unpack_from is a tuple
         val, = struct.unpack_from(packStr, buffer, pos)
@@ -524,7 +469,7 @@ class GcdaInfo:
         return val, cpos
 
     @staticmethod
-    def unpack_uint64(buffer, pos, packStr=GcdaConst.PACKUINT32):
+    def unpack_uint64(buffer, pos, packStr=GcovConst.PACKUINT32):
 
         cpos = pos
 
@@ -540,7 +485,7 @@ class GcdaInfo:
         return val, cpos
 
     @staticmethod
-    def unpack_string(buffer, pos, packStr=GcdaConst.PACKUINT32):
+    def unpack_string(buffer, pos, packStr=GcovConst.PACKUINT32):
         """
         """
         # Note: The comma is important because the return type from struct.unpack_from is a tuple
@@ -569,7 +514,7 @@ class GcdaInfo:
         return
 
     @staticmethod
-    def write_uint32(file_handle, val, packStr=GcdaConst.PACKUINT32):
+    def write_uint32(file_handle, val, packStr=GcovConst.PACKUINT32):
         """
             uint32:  byte3 byte2 byte1 byte0 | byte0 byte1 byte2 byte3
         """
@@ -581,8 +526,8 @@ class GcdaInfo:
         """
             uint64:  uint32:low uint32:high
         """
-        lowOrder = val & GcdaConst.LOWORDERMASK
-        highOrder = (val & GcdaConst.HIGHORDERMASK) >> 32
+        lowOrder = val & GcovConst.LOWORDERMASK
+        highOrder = (val & GcovConst.HIGHORDERMASK) >> 32
 
         # Write the low order word
         GcdaInfo.write_uint32(file_handle, lowOrder)
@@ -605,7 +550,7 @@ class GcdaInfo:
         if (val[valLen - 1] == 'x00') and (padlen == 0):
             return
 
-        file_handle.write(GcdaConst.GCOVIO_STRINGPADDING[padlen])
+        file_handle.write(GcovConst.GCOVIO_STRINGPADDING[padlen])
 
         return
 
@@ -635,28 +580,28 @@ class GcdaInfo:
         return
 
     @staticmethod
-    def unpack_record(record, packStr=GcdaConst.PACKUINT32):
+    def unpack_record(record, packStr=GcovConst.PACKUINT32):
         cpos = 0
 
         tag = record.header.tag
         header = record.header
         buffer = record.items_data
 
-        if tag == GcdaConst.GCOV_TAG_FUNCTION:
+        if tag == GcovConst.GCOV_TAG_FUNCTION:
             swap_record = GcdaInfo.unpack_function_announcement(header, buffer, cpos, packStr)
-        elif tag == GcdaConst.GCOV_TAG_COUNTER_BASE:
+        elif tag == GcovConst.GCOV_TAG_COUNTER_BASE:
             swap_record = GcdaInfo.unpack_counter_base(header, buffer, cpos, packStr)
-        elif tag == GcdaConst.GCOV_TAG_INTERVAL:
+        elif tag == GcovConst.GCOV_TAG_INTERVAL:
             swap_record = GcdaInfo.unpack_interval(header, buffer, cpos, packStr)
-        elif tag == GcdaConst.GCOV_TAG_POW2:
+        elif tag == GcovConst.GCOV_TAG_POW2:
             swap_record = GcdaInfo.unpack_pow2(header, buffer, cpos, packStr)
-        elif tag == GcdaConst.GCOV_TAG_TOPN:
+        elif tag == GcovConst.GCOV_TAG_TOPN:
             swap_record = GcdaInfo.unpack_topn(header, buffer, cpos, packStr)
-        elif tag == GcdaConst.GCOV_TAG_TIME_PROFILER:
+        elif tag == GcovConst.GCOV_TAG_TIME_PROFILER:
             swap_record = GcdaInfo.unpack_time_profiler(header, buffer, cpos, packStr)
-        elif tag == GcdaConst.GCOV_TAG_OBJECT_SUMMARY:
+        elif tag == GcovConst.GCOV_TAG_OBJECT_SUMMARY:
             swap_record = GcdaInfo.unpack_object_summary(header, buffer, cpos, packStr)
-        elif tag == GcdaConst.GCOV_TAG_PROGRAM_SUMMARY:
+        elif tag == GcovConst.GCOV_TAG_PROGRAM_SUMMARY:
             swap_record = GcdaInfo.unpack_program_summary(header, buffer, cpos, packStr)
         else:
             raise IOError("Un-recognized tag (0x%x) found at record index in file." % tag)
@@ -664,7 +609,7 @@ class GcdaInfo:
         return swap_record
 
     @staticmethod
-    def unpack_object_summary(header, buffer, pos, packStr=GcdaConst.PACKUINT32):
+    def unpack_object_summary(header, buffer, pos, packStr=GcovConst.PACKUINT32):
         """
         """
         cpos = pos
@@ -677,7 +622,7 @@ class GcdaInfo:
         return rval
 
     @staticmethod
-    def unpack_program_summary(header, buffer, pos, packStr=GcdaConst.PACKUINT32):
+    def unpack_program_summary(header, buffer, pos, packStr=GcovConst.PACKUINT32):
         """
         """
         cpos = pos
@@ -694,7 +639,7 @@ class GcdaInfo:
         return rval
 
     @staticmethod
-    def unpack_counter_base(header, buffer, pos, packStr=GcdaConst.PACKUINT32):
+    def unpack_counter_base(header, buffer, pos, packStr=GcovConst.PACKUINT32):
         """
             announce_function: header uint32:ident uint32:checksum string:name string:source uint32:lineno
         """
@@ -717,13 +662,14 @@ class GcdaInfo:
         return rval
 
     @staticmethod
-    def unpack_function_announcement(header, buffer, pos, packStr=GcdaConst.PACKUINT32):
+    def unpack_function_announcement(header, buffer, pos, packStr=GcovConst.PACKUINT32):
         """
             announce_function: header uint32:ident uint32:checksum string:name string:source uint32:lineno
         """
         cpos = pos
         ident, cpos = GcdaInfo.unpack_uint32(buffer, cpos, packStr)
         lineno_checksum, cpos = GcdaInfo.unpack_uint32(buffer, cpos, packStr)
+
         cfg_checksum, cpos = GcdaInfo.unpack_uint32(buffer, cpos, packStr)
 
         rval = GCovDataFunctionAnnouncementRecord(header, ident, lineno_checksum, cfg_checksum)
