@@ -1,9 +1,8 @@
 import os
 import random
-import struct
-import sys
 
 import GcovConst
+from GcovIO import GcovIO
 
 
 class GCovDataFunctionAnnouncementRecord:
@@ -199,31 +198,45 @@ class GcdaInfo:
     def extremum_mutation(record):
         if isinstance(record, GCovDataCounterBaseRecord):
             data = record.counters
+            if random.randint(0, 1):
+                data[random.randint(0, len(data) - 1)] = 2 ** 32 - 1
+            else:
+                data[random.randint(0, len(data) - 1)] = 0
         else:
             data = record.time_profiler
-        if random.randint(0, 1):
-            data[random.randint(0, len(data) - 1)] = 2 ** 32 - 1
-        else:
-            data[random.randint(0, len(data) - 1)] = 0
+            if random.randint(0, 1):
+                data[random.randint(0, len(data) - 1)] = 2 ** 31 - 1
+            else:
+                data[random.randint(0, len(data) - 1)] = 0
 
     @staticmethod
     def one_value_mutation(record):
         if isinstance(record, GCovDataCounterBaseRecord):
             data = record.counters
+            index = random.randint(0, len(data) - 1)
+            if random.randint(0, 1):
+                if data[index] == 2 ** 32 - 1:
+                    data[index] -= 1
+                else:
+                    data[index] += 1
+            else:
+                if data[index] == 0:
+                    data[index] += 1
+                else:
+                    data[index] -= 1
         else:
             data = record.time_profiler
-        index = random.randint(0, len(data) - 1)
-        if random.randint(0, 1):
-            if data[index] == 2 ** 32 - 1:
-                data[index] -= 1
+            index = random.randint(0, len(data) - 1)
+            if random.randint(0, 1):
+                if data[index] == 2 ** 31 - 1:
+                    data[index] -= 1
+                else:
+                    data[index] += 1
             else:
-                data[index] += 1
-        else:
-            if data[index] == 0:
-                data[index] += 1
-            else:
-                data[index] -= 1
-        pass
+                if data[index] == 0:
+                    data[index] += 1
+                else:
+                    data[index] -= 1
 
     @staticmethod
     def shuffle_mutation(record):
@@ -237,9 +250,10 @@ class GcdaInfo:
     def random_mutation(record):
         if isinstance(record, GCovDataCounterBaseRecord):
             data = record.counters
+            data[random.randint(0, len(data) - 1)] = random.randint(0, 2 ** 32)
         else:
             data = record.time_profiler
-        data[random.randint(0, len(data) - 1)] = random.randint(0, 2 ** 32)
+            data[random.randint(0, len(data) - 1)] = random.randint(0, 2 ** 31)
 
     def pull_records(self):
         """
@@ -314,7 +328,7 @@ class GcdaInfo:
         return
 
     def _load_file_header(self, file_handle, detect_endianess):
-        magic = GcdaInfo.read_quad_char(file_handle)
+        magic = GcovIO.read_quad_char(file_handle)
 
         if detect_endianess:
             if magic == GcovConst.GCDA_FILE_MAGIC_BIGENDIAN:
@@ -323,8 +337,8 @@ class GcdaInfo:
             elif magic == GcovConst.GCDA_FILE_MAGIC:
                 print("Little Endian GCDA")
 
-        version = GcdaInfo.read_quad_char(file_handle)
-        stamp = GcdaInfo.read_uint32(file_handle)
+        version = GcovIO.read_quad_char(file_handle)
+        stamp = GcovIO.read_uint32(file_handle)
 
         self.header = GcdaFileHeader(magic, version, stamp)
 
@@ -370,9 +384,9 @@ class GcdaInfo:
         version = self.header.version
         stamp = self.header.stamp
 
-        GcdaInfo.write_quad_char(file_handle, magic)
-        GcdaInfo.write_quad_char(file_handle, version)
-        GcdaInfo.write_uint32(file_handle, stamp)
+        GcovIO.write_quad_char(file_handle, magic)
+        GcovIO.write_quad_char(file_handle, version)
+        GcovIO.write_uint32(file_handle, stamp)
 
         return
 
@@ -390,46 +404,6 @@ class GcdaInfo:
         if len(quadByte) < 4:
             print("ERROR: Problem reading UInt32, not enough bytes left in record. quadByte=%s" % quadByte)
 
-
-    @staticmethod
-    def read_uint32(file_handle, packStr=GcovConst.PACKUINT32):
-        """
-            uint32:  byte3 byte2 byte1 byte0 | byte0 byte1 byte2 byte3
-        """
-        quadByte = file_handle.read(4)
-        if len(quadByte) < 4:
-            print("ERROR: Problem reading UInt32, not enough bytes left in record. quadByte=%s" % quadByte)
-
-        val, = struct.unpack(packStr, quadByte)
-
-        return val
-
-    @staticmethod
-    def read_uint64(file_handle, packStr=GcovConst.PACKUINT32):
-        """
-            uint64:  uint32:low uint32:high
-        """
-        lowOrder = GcdaInfo.read_uint32(file_handle, packStr)
-        highOrder = GcdaInfo.read_uint32(file_handle, packStr)
-
-        val = (highOrder << 32) | lowOrder
-
-        return val
-
-    @staticmethod
-    def read_string(file_handle, packStr=GcovConst.PACKUINT32):
-        """
-            string: uint32:0 | uint32:length char* char:0 padding
-            padding: | char:0 | char:0 char:0 | char:0 char:0 char:0
-        """
-
-        wordLength = GcdaInfo.read_uint32(file_handle, packStr)
-        strLen = wordLength * 4
-
-        strVal = file_handle.read(strLen).rstrip(b"\0")
-
-        return strVal
-
     @staticmethod
     def read_record(file_handle, packStr=GcovConst.PACKUINT32):
         """
@@ -437,8 +411,8 @@ class GcdaInfo:
             header: uint32:tag uint32:length
               data: item*
         """
-        record_tag = GcdaInfo.read_uint32(file_handle, packStr)
-        record_length = GcdaInfo.read_uint32(file_handle, packStr)
+        record_tag = GcovIO.read_uint32(file_handle, packStr)
+        record_length = GcovIO.read_uint32(file_handle, packStr)
         # Convert to hexadecimal
         hex_str = format(record_length, '08X')
 
@@ -459,100 +433,6 @@ class GcdaInfo:
             record_items_data = file_handle.read(byte_len)
 
         return GcdaRecord(record_tag, record_length, record_items_data)
-
-    @staticmethod
-    def unpack_uint32(buffer, pos, packStr=GcovConst.PACKUINT32):
-
-        # Note: The comma is important because the return type from struct.unpack_from is a tuple
-        val, = struct.unpack_from(packStr, buffer, pos)
-        cpos = pos + 4
-        return val, cpos
-
-    @staticmethod
-    def unpack_uint64(buffer, pos, packStr=GcovConst.PACKUINT32):
-
-        cpos = pos
-
-        # Note: The comma is important because the return type from struct.unpack_from is a tuple
-        lowOrder, = struct.unpack_from(packStr, buffer, cpos)
-        cpos = cpos + 4
-
-        highOrder, = struct.unpack_from(packStr, buffer, cpos)
-        cpos = cpos + 4
-
-        val = (highOrder << 32) | lowOrder
-
-        return val, cpos
-
-    @staticmethod
-    def unpack_string(buffer, pos, packStr=GcovConst.PACKUINT32):
-        """
-        """
-        # Note: The comma is important because the return type from struct.unpack_from is a tuple
-        strWords, = struct.unpack_from(packStr, buffer, pos)
-        cpos = pos + 4
-
-        val = None
-
-        if strWords > 0:
-            strlen = strWords * 4
-            strend = cpos + strlen
-
-            buffSlice = buffer[cpos: strend]
-            val = buffSlice.rstrip(b'\x00').decode()
-
-            cpos = cpos + strlen
-
-        return val, cpos
-
-    @staticmethod
-    def write_quad_char(file_handle, quad_char):
-        """
-            uint32 in quad char format
-        """
-        file_handle.write(quad_char)
-        return
-
-    @staticmethod
-    def write_uint32(file_handle, val, packStr=GcovConst.PACKUINT32):
-        """
-            uint32:  byte3 byte2 byte1 byte0 | byte0 byte1 byte2 byte3
-        """
-        file_handle.write(struct.pack(packStr, val))
-        return
-
-    @staticmethod
-    def write_uint64(file_handle, val):
-        """
-            uint64:  uint32:low uint32:high
-        """
-        lowOrder = val & GcovConst.LOWORDERMASK
-        highOrder = (val & GcovConst.HIGHORDERMASK) >> 32
-
-        # Write the low order word
-        GcdaInfo.write_uint32(file_handle, lowOrder)
-
-        # Write the high order word
-        GcdaInfo.write_uint32(file_handle, highOrder)
-        return
-
-    @staticmethod
-    def write_string(file_handle, val):
-        """
-            string: uint32:0 | uint32:length char* char:0 padding
-            padding: | char:0 | char:0 char:0 | char:0 char:0 char:0
-        """
-        valLen = len(val)
-        padlen = valLen % 4
-
-        file_handle.write(val)
-
-        if (val[valLen - 1] == 'x00') and (padlen == 0):
-            return
-
-        file_handle.write(GcovConst.GCOVIO_STRINGPADDING[padlen])
-
-        return
 
     @staticmethod
     def write_record(file_handle, record):
@@ -614,8 +494,8 @@ class GcdaInfo:
         """
         cpos = pos
 
-        runs, cpos = GcdaInfo.unpack_uint32(buffer, cpos, packStr)
-        summax, cpos = GcdaInfo.unpack_uint32(buffer, cpos, packStr)
+        runs, cpos = GcovIO.unpack_uint32(buffer, cpos, packStr)
+        summax, cpos = GcovIO.unpack_uint32(buffer, cpos, packStr)
 
         rval = GCovDataObjectSummaryRecord(header, runs, summax)
 
@@ -627,12 +507,12 @@ class GcdaInfo:
         """
         cpos = pos
 
-        checksum, cpos = GcdaInfo.unpack_uint32(buffer, cpos, packStr)
-        counts, cpos = GcdaInfo.unpack_uint32(buffer, cpos, packStr)
-        runs, cpos = GcdaInfo.unpack_uint32(buffer, cpos, packStr)
-        sum_all, cpos = GcdaInfo.unpack_uint64(buffer, cpos, packStr)
-        run_max, cpos = GcdaInfo.unpack_uint64(buffer, cpos, packStr)
-        sum_max, cpos = GcdaInfo.unpack_uint64(buffer, cpos, packStr)
+        checksum, cpos = GcovIO.unpack_uint32(buffer, cpos, packStr)
+        counts, cpos = GcovIO.unpack_uint32(buffer, cpos, packStr)
+        runs, cpos = GcovIO.unpack_uint32(buffer, cpos, packStr)
+        sum_all, cpos = GcovIO.unpack_uint64(buffer, cpos, packStr)
+        run_max, cpos = GcovIO.unpack_uint64(buffer, cpos, packStr)
+        sum_max, cpos = GcovIO.unpack_uint64(buffer, cpos, packStr)
 
         rval = GCovDataProgramSummaryRecord(header, checksum, counts, runs, sum_all, run_max, sum_max)
 
@@ -651,7 +531,7 @@ class GcdaInfo:
         counters = []
 
         while counterIndex < counterLength:
-            nextValue, cpos = GcdaInfo.unpack_uint64(buffer, cpos, packStr)
+            nextValue, cpos = GcovIO.unpack_uint64(buffer, cpos, packStr)
             if nextValue == 386547056640:
                 pass
             counters.append(nextValue)
@@ -667,10 +547,10 @@ class GcdaInfo:
             announce_function: header uint32:ident uint32:checksum string:name string:source uint32:lineno
         """
         cpos = pos
-        ident, cpos = GcdaInfo.unpack_uint32(buffer, cpos, packStr)
-        lineno_checksum, cpos = GcdaInfo.unpack_uint32(buffer, cpos, packStr)
+        ident, cpos = GcovIO.unpack_uint32(buffer, cpos, packStr)
+        lineno_checksum, cpos = GcovIO.unpack_uint32(buffer, cpos, packStr)
 
-        cfg_checksum, cpos = GcdaInfo.unpack_uint32(buffer, cpos, packStr)
+        cfg_checksum, cpos = GcovIO.unpack_uint32(buffer, cpos, packStr)
 
         rval = GCovDataFunctionAnnouncementRecord(header, ident, lineno_checksum, cfg_checksum)
 
@@ -686,7 +566,7 @@ class GcdaInfo:
         counters = []
 
         while counterIndex < counterLength:
-            nextValue, cpos = GcdaInfo.unpack_uint64(buffer, cpos, packStr)
+            nextValue, cpos = GcovIO.unpack_uint64(buffer, cpos, packStr)
             if nextValue == 386547056640:
                 pass
             counters.append(nextValue)
@@ -706,14 +586,14 @@ class GcdaInfo:
         run_max = record.run_max
         sum_max = record.sum_max
 
-        GcdaInfo.write_uint32(file_handle, header.tag)
-        GcdaInfo.write_uint32(file_handle, header.length)
-        GcdaInfo.write_uint32(file_handle, checksum)
-        GcdaInfo.write_uint32(file_handle, counts)
-        GcdaInfo.write_uint32(file_handle, runs)
-        GcdaInfo.write_uint64(file_handle, sum_all)
-        GcdaInfo.write_uint64(file_handle, run_max)
-        GcdaInfo.write_uint64(file_handle, sum_max)
+        GcovIO.write_uint32(file_handle, header.tag)
+        GcovIO.write_uint32(file_handle, header.length)
+        GcovIO.write_uint32(file_handle, checksum)
+        GcovIO.write_uint32(file_handle, counts)
+        GcovIO.write_uint32(file_handle, runs)
+        GcovIO.write_uint64(file_handle, sum_all)
+        GcovIO.write_uint64(file_handle, run_max)
+        GcovIO.write_uint64(file_handle, sum_max)
 
         return
 
@@ -722,13 +602,13 @@ class GcdaInfo:
         header = record.header
         counters = record.counters
         if len(counters) != 0 and all(x == 0 for x in counters):
-            GcdaInfo.write_uint32(file_handle, header.tag)
-            GcdaInfo.write_uint32(file_handle, -header.length + 2 ** 32)
+            GcovIO.write_uint32(file_handle, header.tag)
+            GcovIO.write_uint32(file_handle, -header.length + 2 ** 32)
         else:
-            GcdaInfo.write_uint32(file_handle, header.tag)
-            GcdaInfo.write_uint32(file_handle, header.length)
+            GcovIO.write_uint32(file_handle, header.tag)
+            GcovIO.write_uint32(file_handle, header.length)
             for counter in counters:
-                GcdaInfo.write_uint64(file_handle, counter)
+                GcovIO.write_uint64(file_handle, counter)
         return
 
     @classmethod
@@ -737,13 +617,13 @@ class GcdaInfo:
         time_profiler = record.time_profiler
 
         if all(x == 0 for x in time_profiler):
-            GcdaInfo.write_uint32(file_handle, header.tag)
-            GcdaInfo.write_uint32(file_handle, -header.length + 2 ** 32)
+            GcovIO.write_uint32(file_handle, header.tag)
+            GcovIO.write_uint32(file_handle, -header.length + 2 ** 32)
         else:
-            GcdaInfo.write_uint32(file_handle, header.tag)
-            GcdaInfo.write_uint32(file_handle, header.length)
+            GcovIO.write_uint32(file_handle, header.tag)
+            GcovIO.write_uint32(file_handle, header.length)
             for counter in time_profiler:
-                GcdaInfo.write_uint64(file_handle, counter)
+                GcovIO.write_uint64(file_handle, counter)
         return
 
     @classmethod
@@ -752,10 +632,10 @@ class GcdaInfo:
         runs = record.runs
         summax = record.sum_max
 
-        GcdaInfo.write_uint32(file_handle, header.tag)
-        GcdaInfo.write_uint32(file_handle, header.length)
-        GcdaInfo.write_uint32(file_handle, runs)
-        GcdaInfo.write_uint32(file_handle, summax)
+        GcovIO.write_uint32(file_handle, header.tag)
+        GcovIO.write_uint32(file_handle, header.length)
+        GcovIO.write_uint32(file_handle, runs)
+        GcovIO.write_uint32(file_handle, summax)
         return
 
     @classmethod
@@ -765,11 +645,11 @@ class GcdaInfo:
         lineno_checksum = record.lineno_checksum
         cfg_checksum = record.cfg_checksum
 
-        GcdaInfo.write_uint32(file_handle, header.tag)
-        GcdaInfo.write_uint32(file_handle, header.length)
-        GcdaInfo.write_uint32(file_handle, indent)
-        GcdaInfo.write_uint32(file_handle, lineno_checksum)
-        GcdaInfo.write_uint32(file_handle, cfg_checksum)
+        GcovIO.write_uint32(file_handle, header.tag)
+        GcovIO.write_uint32(file_handle, header.length)
+        GcovIO.write_uint32(file_handle, indent)
+        GcovIO.write_uint32(file_handle, lineno_checksum)
+        GcovIO.write_uint32(file_handle, cfg_checksum)
         return
 
     @classmethod
@@ -782,7 +662,7 @@ class GcdaInfo:
         counters = []
 
         while counterIndex < counterLength:
-            nextValue, cpos = GcdaInfo.unpack_uint64(buffer, cpos, packStr)
+            nextValue, cpos = GcovIO.unpack_uint64(buffer, cpos, packStr)
             if nextValue == 386547056640:
                 pass
             counters.append(nextValue)
@@ -802,7 +682,7 @@ class GcdaInfo:
         counters = []
 
         while counterIndex < counterLength:
-            nextValue, cpos = GcdaInfo.unpack_uint64(buffer, cpos, packStr)
+            nextValue, cpos = GcovIO.unpack_uint64(buffer, cpos, packStr)
             if nextValue == 386547056640:
                 pass
             counters.append(nextValue)
@@ -822,7 +702,7 @@ class GcdaInfo:
         counters = []
 
         while counterIndex < counterLength:
-            nextValue, cpos = GcdaInfo.unpack_uint64(buffer, cpos, packStr)
+            nextValue, cpos = GcovIO.unpack_uint64(buffer, cpos, packStr)
             if nextValue == 386547056640:
                 pass
             counters.append(nextValue)
@@ -838,13 +718,13 @@ class GcdaInfo:
         interval = record.interval
 
         if len(interval) != 0 and all(x == 0 for x in interval):
-            GcdaInfo.write_uint32(file_handle, header.tag)
-            GcdaInfo.write_uint32(file_handle, -header.length + 2 ** 32)
+            GcovIO.write_uint32(file_handle, header.tag)
+            GcovIO.write_uint32(file_handle, -header.length + 2 ** 32)
         else:
-            GcdaInfo.write_uint32(file_handle, header.tag)
-            GcdaInfo.write_uint32(file_handle, header.length)
+            GcovIO.write_uint32(file_handle, header.tag)
+            GcovIO.write_uint32(file_handle, header.length)
             for counter in interval:
-                GcdaInfo.write_uint64(file_handle, counter)
+                GcovIO.write_uint64(file_handle, counter)
         return
 
     @classmethod
@@ -853,13 +733,13 @@ class GcdaInfo:
         pow2 = record.pow2
 
         if len(pow2) != 0 and all(x == 0 for x in pow2):
-            GcdaInfo.write_uint32(file_handle, header.tag)
-            GcdaInfo.write_uint32(file_handle, -header.length + 2 ** 32)
+            GcovIO.write_uint32(file_handle, header.tag)
+            GcovIO.write_uint32(file_handle, -header.length + 2 ** 32)
         else:
-            GcdaInfo.write_uint32(file_handle, header.tag)
-            GcdaInfo.write_uint32(file_handle, header.length)
+            GcovIO.write_uint32(file_handle, header.tag)
+            GcovIO.write_uint32(file_handle, header.length)
             for counter in pow2:
-                GcdaInfo.write_uint64(file_handle, counter)
+                GcovIO.write_uint64(file_handle, counter)
         return
 
     @classmethod
@@ -867,7 +747,7 @@ class GcdaInfo:
         header = record.header
         topn = record.topn
 
-        GcdaInfo.write_uint32(file_handle, header.tag)
-        GcdaInfo.write_uint32(file_handle, header.length)
+        GcovIO.write_uint32(file_handle, header.tag)
+        GcovIO.write_uint32(file_handle, header.length)
         for counter in topn:
-            GcdaInfo.write_uint64(file_handle, counter)
+            GcovIO.write_uint64(file_handle, counter)

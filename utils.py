@@ -2,13 +2,37 @@ import os
 import shutil
 
 from GcdaInfo import GcdaInfo
+from GcnoInfo import GcnoInfo, GcovNoteFunctionAnnouncementRecord
+from GcovConstraint import GcovConstraint
+
+
+def construct(gcno):
+    records = gcno.records
+    function_announce_record_index = [records.index(record) for record in records if
+                                      isinstance(record, GcovNoteFunctionAnnouncementRecord)]
+    function_announce_record_index.append(len(records))
+    method_constraint_dict = {}
+    for i in range(len(function_announce_record_index) - 1):
+        ident = records[function_announce_record_index[i]].ident
+        method_constraint_dict[ident] = GcovConstraint(ident, records[function_announce_record_index[i] + 1:
+                                                                      function_announce_record_index[i + 1]])
+    return method_constraint_dict
+
+
+def build_constraint(file_name):
+    gcno = GcnoInfo()
+    gcno.load(file_name + ".gcno")
+    gcno.pull_records()
+    method_constraint_dict = construct(gcno)
+    return method_constraint_dict
 
 
 def init(dir_path, file_name):
     file_name = "test" + file_name
     os.makedirs(dir_path + "/" + file_name)
     os.chdir(dir_path + "/" + file_name)
-    return generate_compile(file_name)
+    gcda = generate_compile(file_name)
+    return gcda
 
 
 def generate_compile(file_name):
@@ -30,7 +54,7 @@ def generate_compile(file_name):
 
 
 def gcc_recompile(gcda):
-    cmd = "gcc -fprofile-use " + gcda.source_file_name + ".c -o " + gcda.source_file_name + "_mut"
+    cmd = "gcc -fprofile-use -fprofile-correction " + gcda.source_file_name + ".c -o " + gcda.source_file_name + "_mut"
     result = os.system(cmd)
     while result != 0:
         init_gcda = GcdaInfo()

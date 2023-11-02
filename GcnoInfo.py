@@ -330,7 +330,7 @@ class GcovNoteFunctionAnnouncementRecord:
     def __init__(self, header, ident, lineno_checksum, cfg_checksum, name, artificial, source, start_lineno,
                  start_columnno, end_lineno, end_columnno):
         self.header = header
-        self.indent = ident
+        self.ident = ident
         self.lineno_checksum = lineno_checksum
         self.cfg_checksum = cfg_checksum
         self.name = name
@@ -344,7 +344,7 @@ class GcovNoteFunctionAnnouncementRecord:
 
     def print(self):
         print("Function: Ident=%d LineNoCheckSum%d CfgCheckSum=%d LineNo=%d Name=%s Source%s" % (
-            self.indent, self.lineno_checksum, self.cfg_checksum, self.line_no, self.name, self.source))
+            self.ident, self.lineno_checksum, self.cfg_checksum, self.line_no, self.name, self.source))
         return
 
 
