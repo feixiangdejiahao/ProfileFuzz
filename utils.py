@@ -62,7 +62,7 @@ def generate_compile(file_name):
 
 def gcc_recompile(gcda):
     optimization_level = get_optimization_level()
-    cmd = "gcc -fprofile-use -fprofile-correction " + optimization_level + " " + gcda.source_file_name + ".c -o " + gcda.source_file_name + "_mut"
+    cmd = "gcc -fprofile-use -fprofile-correction " + " " + gcda.source_file_name + ".c -o " + gcda.source_file_name + "_mut"
     result = os.system(cmd)
     while result != 0:
         init_gcda = GcdaInfo()
