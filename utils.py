@@ -44,7 +44,7 @@ def get_optimization_level():
 def generate_compile(file_name):
     generate_cmd = "csmith > " + file_name + ".c"
     optimization_level = get_optimization_level()
-    compile_cmd = "gcc -fprofile-generate " + optimization_level + " " + + file_name + ".c -o " + file_name
+    compile_cmd = "gcc -fprofile-generate " + optimization_level + " " + file_name + ".c -o " + file_name
     execute_cmd = "timeout 30s ./" + file_name
     result = 1
     while result != 0:
