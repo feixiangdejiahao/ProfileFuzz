@@ -1,4 +1,5 @@
 import os
+import random
 import shutil
 
 from GcdaInfo import GcdaInfo
@@ -35,9 +36,15 @@ def init(dir_path, file_name):
     return gcda
 
 
+def get_optimization_level():
+    optimization_levels = ["-O0", "-O1", "-O2", "-O3", "-Os", "-Og"]
+    return random.choice(optimization_levels)
+
+
 def generate_compile(file_name):
     generate_cmd = "csmith > " + file_name + ".c"
-    compile_cmd = "gcc -fprofile-generate " + file_name + ".c -o " + file_name
+    optimization_level = get_optimization_level()
+    compile_cmd = "gcc -fprofile-generate " + optimization_level + " " + + file_name + ".c -o " + file_name
     execute_cmd = "timeout 30s ./" + file_name
     result = 1
     while result != 0:
@@ -54,7 +61,8 @@ def generate_compile(file_name):
 
 
 def gcc_recompile(gcda):
-    cmd = "gcc -fprofile-use -fprofile-correction " + gcda.source_file_name + ".c -o " + gcda.source_file_name + "_mut"
+    optimization_level = get_optimization_level()
+    cmd = "gcc -fprofile-use -fprofile-correction " + optimization_level + " " + gcda.source_file_name + ".c -o " + gcda.source_file_name + "_mut"
     result = os.system(cmd)
     while result != 0:
         init_gcda = GcdaInfo()
