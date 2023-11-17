@@ -44,7 +44,7 @@ def get_optimization_level():
 def generate_compile(file_name):
     generate_cmd = "csmith > " + file_name + ".c"
     optimization_level = get_optimization_level()
-    compile_cmd = "gcc -fprofile-generate " + optimization_level + " " + file_name + ".c -o " + file_name
+    compile_cmd = "gcc " + optimization_level + " -fprofile-generate " + file_name + ".c -o " + file_name
     execute_cmd = "timeout 30s ./" + file_name
     result = 1
     while result != 0:
@@ -62,7 +62,7 @@ def generate_compile(file_name):
 
 def gcc_recompile(gcda):
     optimization_level = get_optimization_level()
-    cmd = "gcc -fprofile-use -fprofile-correction " + optimization_level + " " + gcda.source_file_name + ".c -o " + gcda.source_file_name + "_mut"
+    cmd = "gcc " + optimization_level + " -fprofile-use -fprofile-correction " + gcda.source_file_name + ".c -o " + gcda.source_file_name + "_mut"
     result = os.system(cmd)
     while result != 0:
         init_gcda = GcdaInfo()
