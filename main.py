@@ -13,4 +13,4 @@ if __name__ == "__main__":
         mutate(gcda, method_constraint_dict)
         gcc_recompile(gcda)
         differential_test(gcda)
-        calculate_similarity(file_name, i)
+        calculate_similarity(gcda, i)
