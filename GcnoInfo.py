@@ -201,7 +201,7 @@ class GcnoInfo:
             destblock, cpos = GcovIO.unpack_uint32(buffer, cpos, packStr)
             flags, cpos = GcovIO.unpack_uint32(buffer, cpos, packStr)
 
-            arcEntry = GcovGraphArc(destblock, flags)
+            arcEntry = GcovGraphArc(blockNumber, destblock, flags)
             arcSet.append(arcEntry)
 
             arcCount -= 1
@@ -385,15 +385,16 @@ class GcovGraphArc:
         uint32:dest_block uint32:flags
     """
 
-    def __init__(self, destBlock, flags):
-        self.dest_block = destBlock
-        self.flags = flags
+    def __init__(self, initBlock, destBlock, flag):
+        self.source_block_number = initBlock
+        self.destination_block_number = destBlock
+        self.flag = flag
         self.arc_id = None
         self.counter = None
 
-        self.has_flag_fake = ((flags & GcovConst.GCOV_FLAG_ARC_FAKE) > 0)
-        self.has_flag_fall_through = ((flags & GcovConst.GCOV_FLAG_ARC_FALLTHROUGH) > 0)
-        self.has_flag_on_tree = ((flags & GcovConst.GCOV_FLAG_ARC_ON_TREE) > 0)
+        self.has_flag_fake = ((flag & GcovConst.GCOV_FLAG_ARC_FAKE) > 0)
+        self.has_flag_fall_through = ((flag & GcovConst.GCOV_FLAG_ARC_FALLTHROUGH) > 0)
+        self.has_flag_on_tree = ((flag & GcovConst.GCOV_FLAG_ARC_ON_TREE) > 0)
 
         self.is_relevant_branch = False
         self.is_return_branch = False

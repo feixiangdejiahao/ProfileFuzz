@@ -178,24 +178,17 @@ class GcdaInfo:
         self.records = records
         return
 
-    def mutate(self):
-        """
-        """
-        data = [record for record in self.records if
-                isinstance(record, GCovDataCounterBaseRecord) or isinstance(record, GCovDataTimeProfilerRecord)]
-        record = data[random.Random().randint(0, len(data) - 1)]
-        mutator = random.Random().randint(0, 3)
-        if mutator == 0:
-            self.extremum_mutation(record)
-        elif mutator == 1:
-            self.one_value_mutation(record)
-        elif mutator == 2:
-            self.shuffle_mutation(record)
-        else:
-            self.random_mutation(record)
+    def mutate(self, method_constraint_dict):
+        function_index = [self.records.index(record) for record in self.records if
+                          isinstance(record, GCovDataFunctionAnnouncementRecord)]
+        index = random.choice(function_index)
+        function = self.records[index]
+        constraints = method_constraint_dict[function.ident].constraints
+        record = self.records[index + 1]
+        self.random_mutation(constraints, record)
 
     @staticmethod
-    def extremum_mutation(record):
+    def extremum_mutation(constraints, record):
         if isinstance(record, GCovDataCounterBaseRecord):
             data = record.counters
             if random.randint(0, 1):
@@ -210,7 +203,7 @@ class GcdaInfo:
                 data[random.randint(0, len(data) - 1)] = 0
 
     @staticmethod
-    def one_value_mutation(record):
+    def one_value_mutation(constraints, record):
         if isinstance(record, GCovDataCounterBaseRecord):
             data = record.counters
             index = random.randint(0, len(data) - 1)
@@ -238,22 +231,83 @@ class GcdaInfo:
                 else:
                     data[index] -= 1
 
-    @staticmethod
-    def shuffle_mutation(record):
+    def random_mutation(self, constraints, record):
         if isinstance(record, GCovDataCounterBaseRecord):
-            data = record.counters
-        else:
-            data = record.time_profiler
-        random.shuffle(data)
+            index = random.randint(0, len(record.counters) - 1)
+            value = random.randint(0, 1000)
+            record.counters[index] = value
+            self.forward_constraint_solve(constraints, record.counters, index, value)
+            self.backward_constraint_solve(constraints, record.counters, index, value)
+            print("mutation finished")
+
+    def forward_constraint_solve(self, constraints, counters, index, value):
+        for constraint in constraints:
+            if constraint.outgoing_contain_target_counter(index):
+                if constraint.outgoing_status:
+                    outgoing_sum = sum([counters[i] for i in constraint.outgoing_counters])
+                    incoming_list = self.random_partition(outgoing_sum,
+                                                          len(constraint.incoming_counters))  # in this case, maybe len(constraint.incoming_counters) < len(incoming_list)
+                    for i in range(len(constraint.incoming_counters)):
+                        counters[constraint.incoming_counters[i]] = incoming_list[i]
+                        self.forward_constraint_solve(constraints, counters, constraint.incoming_counters[i],
+                                                      incoming_list[i])
+                else:
+                    incoming_list = self.random_partition(value, len(constraint.incoming_counters))
+                    for i in range(len(constraint.incoming_counters)):
+                        counters[constraint.incoming_counters[i]] = incoming_list[i]
+                        self.forward_constraint_solve(constraints, counters, constraint.incoming_counters[i],
+                                                      incoming_list[i])
+
+    def backward_constraint_solve(self, constraints, counters, index, value):
+        for constraint in constraints:
+            if constraint.incoming_contain_target_counter(index):
+                if constraint.incoming_status:
+                    incoming_sum = sum([counters[i] for i in constraint.incoming_counters])
+                    outgoing_list = self.random_partition(incoming_sum,
+                                                          len(constraint.outgoing_counters))
+                    for i in range(len(constraint.outgoing_counters)):
+                        counters[constraint.outgoing_counters[i]] = outgoing_list[i]
+                        self.backward_constraint_solve(constraints, counters, constraint.outgoing_counters[i],
+                                                       outgoing_list[i])
+                else:
+                    outgoing_list = self.random_partition(value, len(constraint.outgoing_counters))
+                    for i in range(len(constraint.outgoing_counters)):
+                        counters[constraint.outgoing_counters[i]] = outgoing_list[i]
+                        self.backward_constraint_solve(constraints, counters, constraint.outgoing_counters[i],
+                                                       outgoing_list[i])
 
     @staticmethod
-    def random_mutation(record):
-        if isinstance(record, GCovDataCounterBaseRecord):
-            data = record.counters
-            data[random.randint(0, len(data) - 1)] = random.randint(0, 2 ** 32)
-        else:
-            data = record.time_profiler
-            data[random.randint(0, len(data) - 1)] = random.randint(0, 2 ** 31)
+    def random_partition(s, x):
+        """
+        Randomly partition a positive integer s into x parts.
+
+        Args:
+        s (int): The integer to be partitioned.
+        x (int): The number of parts to divide s into.
+
+        Returns:
+        list: A list of x integers that sum up to s.
+        """
+        # Ensure s is greater than or equal to x to allow a valid partition
+        if s < x:
+            raise ValueError("s must be greater than or equal to x for a valid partition")
+
+        # Generate x - 1 random numbers between 1 and s - 1
+        random_numbers = sorted(random.sample(range(1, s), x - 1))
+
+        # Initialize the partition list
+        partition = []
+
+        # Calculate the differences between consecutive numbers to get the partition
+        previous_number = 0
+        for number in random_numbers:
+            partition.append(number - previous_number)
+            previous_number = number
+
+        # Add the last part to complete the partition
+        partition.append(s - previous_number)
+
+        return partition
 
     def pull_records(self):
         """

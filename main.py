@@ -8,8 +8,8 @@ if __name__ == "__main__":
     dir_path = sys.argv[1]
     file_name = sys.argv[2]
     mutation_number = int(sys.argv[3])
-    gcda = init(dir_path, file_name)
+    gcda, method_constraint_dict = init(dir_path, file_name)
     for i in range(mutation_number):
-        mutate(gcda)
+        mutate(gcda, method_constraint_dict)
         gcc_recompile(gcda)
         differential_test(gcda)

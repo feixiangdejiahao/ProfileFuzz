@@ -1,5 +1,4 @@
 import os
-import random
 import shutil
 
 from GcdaInfo import GcdaInfo
@@ -15,8 +14,9 @@ def construct(gcno):
     method_constraint_dict = {}
     for i in range(len(function_announce_record_index) - 1):
         ident = records[function_announce_record_index[i]].ident
-        method_constraint_dict[ident] = GcovConstraint(ident, records[function_announce_record_index[i] + 1:
+        method_constraint_dict[ident] = GcovConstraint(ident, records[function_announce_record_index[i] + 2:
                                                                       function_announce_record_index[i + 1]])
+        method_constraint_dict[ident].construct_constraint()
     return method_constraint_dict
 
 
@@ -30,21 +30,16 @@ def build_constraint(file_name):
 
 def init(dir_path, file_name):
     file_name = "test" + file_name
-    os.makedirs(dir_path + "/" + file_name)
+    # os.makedirs(dir_path + "/" + file_name)
     os.chdir(dir_path + "/" + file_name)
     gcda = generate_compile(file_name)
-    return gcda
-
-
-def get_optimization_level():
-    optimization_levels = ["-O0", "-O1", "-O2", "-O3", "-Os", "-Og"]
-    return random.choice(optimization_levels)
+    method_constraint_dict = build_constraint(file_name)
+    return gcda, method_constraint_dict
 
 
 def generate_compile(file_name):
     generate_cmd = "csmith > " + file_name + ".c"
-    optimization_level = get_optimization_level()
-    compile_cmd = "gcc " + optimization_level + " -fprofile-generate " + file_name + ".c -o " + file_name
+    compile_cmd = "gcc --coverage " + file_name + ".c -o " + file_name
     execute_cmd = "timeout 30s ./" + file_name
     result = 1
     while result != 0:
@@ -61,8 +56,7 @@ def generate_compile(file_name):
 
 
 def gcc_recompile(gcda):
-    optimization_level = get_optimization_level()
-    cmd = "gcc " + optimization_level + " -fprofile-use -fprofile-correction " + gcda.source_file_name + ".c -o " + gcda.source_file_name + "_mut"
+    cmd = "gcc -fprofile-use " + gcda.source_file_name + ".c -o " + gcda.source_file_name + "_mut"
     result = os.system(cmd)
     while result != 0:
         init_gcda = GcdaInfo()
@@ -84,8 +78,8 @@ def differential_test(gcda):
         # write to bug_report.txt
 
 
-def mutate(gcda):
-    gcda.mutate()
+def mutate(gcda, method_constraint_dict):
+    gcda.mutate(method_constraint_dict)
     gcda.save()
 
 
