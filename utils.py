@@ -75,7 +75,6 @@ def calculate_similarity(gcda, i):
     cmd = "echo \"\n=== iteration " + str(i) + " ===\n\">> similarity.txt"
     os.system(cmd)
     cmd = "radiff2 -s " + gcda.source_file_name + " " + gcda.source_file_name + "_mut >> similarity.txt"
-    print(cmd)
     os.system(cmd)
 
 
