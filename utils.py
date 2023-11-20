@@ -39,7 +39,7 @@ def init(dir_path, file_name):
 
 def generate_compile(file_name):
     generate_cmd = "csmith > " + file_name + ".c"
-    compile_cmd = "gcc --coverage " + file_name + ".c -o " + file_name
+    compile_cmd = "gcc -fprofile-generate " + file_name + ".c -o " + file_name
     execute_cmd = "timeout 30s ./" + file_name
     result = 1
     while result != 0:
