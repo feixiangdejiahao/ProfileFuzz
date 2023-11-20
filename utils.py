@@ -57,14 +57,7 @@ def generate_compile(file_name):
 
 def gcc_recompile(gcda):
     cmd = "gcc -fprofile-use " + gcda.source_file_name + ".c -o " + gcda.source_file_name + "_mut"
-    result = os.system(cmd)
-    while result != 0:
-        init_gcda = GcdaInfo()
-        init_gcda.load(gcda.source_file_name + ".gcda")
-        init_gcda.pull_records()
-        mutate(init_gcda)
-        init_gcda.save(gcda.source_file_name + "_mut-" + gcda.source_file_name + ".gcda")
-        result = os.system(cmd)
+    os.system(cmd)
 
 
 def differential_test(gcda):
@@ -76,6 +69,13 @@ def differential_test(gcda):
         print("bug found in " + gcda.source_file_name)
         save_bug_report(gcda.source_file_name)
         # write to bug_report.txt
+
+
+def calculate_similarity(file_name, i):
+    cmd = "echo \"\n=== iteration " + str(i) + " ===\n\">> similarity.txt"
+    os.system(cmd)
+    cmd = "radiff2 -s " + file_name + " " + file_name + "_mut >> similarity.txt"
+    os.system(cmd)
 
 
 def mutate(gcda, method_constraint_dict):
