@@ -30,7 +30,7 @@ def build_constraint(file_name):
 
 def init(dir_path, file_name):
     file_name = "test" + file_name
-    # os.makedirs(dir_path + "/" + file_name)
+    os.makedirs(dir_path + "/" + file_name)
     os.chdir(dir_path + "/" + file_name)
     gcda = generate_compile(file_name)
     method_constraint_dict = build_constraint(file_name)
