@@ -75,6 +75,7 @@ def calculate_similarity(file_name, i):
     cmd = "echo \"\n=== iteration " + str(i) + " ===\n\">> similarity.txt"
     os.system(cmd)
     cmd = "radiff2 -s " + file_name + " " + file_name + "_mut >> similarity.txt"
+    print(cmd)
     os.system(cmd)
 
 
