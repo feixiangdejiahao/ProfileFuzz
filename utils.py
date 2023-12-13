@@ -39,7 +39,7 @@ def init(dir_path, file_name):
 
 def generate_compile(file_name):
     generate_cmd = "csmith > " + file_name + ".c"
-    compile_cmd = "gcc --coverage " + file_name + ".c -o " + file_name
+    compile_cmd = "gcc -w --coverage " + file_name + ".c -o " + file_name
     execute_cmd = "timeout 30s ./" + file_name
     result = 1
     while result != 0:
@@ -56,8 +56,11 @@ def generate_compile(file_name):
 
 
 def gcc_recompile(gcda):
-    cmd = "gcc -fprofile-use " + gcda.source_file_name + ".c -o " + gcda.source_file_name + "_mut"
-    os.system(cmd)
+    cmd = "gcc -w -fprofile-use " + gcda.source_file_name + ".c -o " + gcda.source_file_name + "_mut"
+    result = os.system(cmd)
+    if result != 0:
+        cmd = "gcc -w -fprofile-use -fprofile-correction " + gcda.source_file_name + ".c -o " + gcda.source_file_name + "_mut"
+        os.system(cmd)
 
 
 def differential_test(gcda):
@@ -71,10 +74,10 @@ def differential_test(gcda):
         # write to bug_report.txt
 
 
-def calculate_similarity(gcda, i):
-    cmd = "echo \"\n=== iteration " + str(i) + " ===\n\">> similarity.txt"
+def calculate_similarity(file_name, i):
+    cmd = "echo \"\n=== iteration " + str(i) + " ===\n\" >> similarity.txt"
     os.system(cmd)
-    cmd = "radiff2 -s " + gcda.source_file_name + " " + gcda.source_file_name + "_mut >> similarity.txt"
+    cmd = "radiff2 -s " + file_name + " " + file_name + "_mut >> similarity.txt"
     os.system(cmd)
 
 

@@ -1,4 +1,5 @@
 from GcnoInfo import GcovNoteArcSetRecord, GcovNoteLineSetRecord
+from z3 import *
 
 
 class GcovConstraint:
@@ -6,6 +7,7 @@ class GcovConstraint:
         self.ident = ident
         self.records = records
         self.arc_list = []
+        self.counter_list = []
         self.block_list = []
         self.constraints = []
 
@@ -13,8 +15,10 @@ class GcovConstraint:
         for record in self.records:
             if isinstance(record, GcovNoteArcSetRecord):
                 for arc in record.arcs:
-                    if arc.flag == 0 or arc.flag == 4:
+                    if arc.flag != 3:
                         self.arc_list.append(arc)
+                        if arc.flag == 0 or arc.flag == 4:
+                            self.counter_list.append(arc)
 
     def extract_block_list(self):  # extract all blocks with line number from gcno
         for record in self.records:
@@ -22,8 +26,8 @@ class GcovConstraint:
                 self.block_list.append(record.block_number)
 
     def construct_constraint(self):
-        self.extract_arc_list()
         self.extract_block_list()
+        self.extract_arc_list()
         for block in self.block_list:
             outgoing_arc = []
             incoming_arc = []
@@ -34,22 +38,38 @@ class GcovConstraint:
                     incoming_arc.append(arc)
             if len(outgoing_arc) == 0 or len(incoming_arc) == 0:
                 continue
-            constraint = Constraint([self.arc_list.index(i) for i in incoming_arc],
-                                    [self.arc_list.index(i) for i in outgoing_arc],
-                                    all(i in self.arc_list for i in incoming_arc),
-                                    all(i in self.arc_list for i in incoming_arc))
+            constraint = Constraint(incoming_arc, outgoing_arc)
             self.constraints.append(constraint)
+
+    def solve(self, index, value):
+
+        solver = Solver()
+        for arc in self.arc_list:
+            solver.add(Int("arc" + str(arc.source_block_number) + "_" + str(arc.destination_block_number)) >= 0)
+        for constraint in self.constraints:
+            incoming_arc = constraint.incoming_edge
+            outgoing_arc = constraint.outgoing_edge
+            incoming_sum, outgoing_sum = 0, 0
+            for arc in incoming_arc:
+                incoming_sum += Int("arc" + str(arc.source_block_number) + "_" + str(arc.destination_block_number))
+            for arc in outgoing_arc:
+                outgoing_sum += Int("arc" + str(arc.source_block_number) + "_" + str(arc.destination_block_number))
+            solver.add(incoming_sum == outgoing_sum)
+        solver.add(Int("x" + str(self.counter_list[index].source_block_number) + "_" + str(self.counter_list[index].
+                                                                                           destination_block_number))
+                   == value)
+        if solver.check() == sat:
+            model = solver.model()
+            result = []
+            for counter in self.counter_list:
+                result.append(
+                    model[Int("x" + str(counter.source_block_number) + "_" + str(counter.destination_block_number))])
+            return result
+        else:
+            return False
 
 
 class Constraint:
-    def __init__(self, incoming_counter, outgoing_counter, incoming_status, outgoing_status):
-        self.incoming_counters = incoming_counter
-        self.outgoing_counters = outgoing_counter
-        self.incoming_status = incoming_status  # incoming_status = True means all incoming arcs are counter
-        self.outgoing_status = outgoing_status  # outgoing_status = True means all outgoing arcs are counter
-
-    def incoming_contain_target_counter(self, counter_index):
-        return counter_index in self.incoming_counters
-
-    def outgoing_contain_target_counter(self, counter_index):
-        return counter_index in self.outgoing_counters
+    def __init__(self, incoming_edge, outgoing_edge):
+        self.incoming_edge = incoming_edge
+        self.outgoing_edge = outgoing_edge
