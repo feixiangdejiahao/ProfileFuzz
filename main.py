@@ -13,4 +13,5 @@ if __name__ == "__main__":
         mutate(gcda, method_constraint_dict)
         gcc_recompile(gcda)
         differential_test(gcda)
+        print(file_name + "'s mutation " + str(i) + " finished")
         # calculate_similarity(file_name, i)
