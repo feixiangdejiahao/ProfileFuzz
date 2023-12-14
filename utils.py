@@ -30,8 +30,10 @@ def build_constraint(file_name):
 
 def init(dir_path, file_name):
     file_name = "test" + file_name
-    os.makedirs(dir_path + "/" + file_name)
-    os.chdir(dir_path + "/" + file_name)
+    if os.path.exists(dir_path + file_name):
+        shutil.rmtree(dir_path + file_name)
+    os.makedirs(dir_path + file_name)
+    os.chdir(dir_path + file_name)
     gcda = generate_compile(file_name)
     method_constraint_dict = build_constraint(file_name)
     return gcda, method_constraint_dict
@@ -59,7 +61,7 @@ def gcc_recompile(gcda):
     cmd = "gcc -w -fprofile-use " + gcda.source_file_name + ".c -o " + gcda.source_file_name + "_mut"
     result = os.system(cmd)
     if result != 0:
-        cmd = "gcc -w -fprofile-use -fprofile-correction " + gcda.source_file_name + ".c -o " + gcda.source_file_name + "_mut"
+        cmd = "gcc -w -fprofile-use " + gcda.source_file_name + ".c -o " + gcda.source_file_name + "_mut"
         os.system(cmd)
 
 

@@ -1,3 +1,5 @@
+import random
+
 from GcnoInfo import GcovNoteArcSetRecord, GcovNoteLineSetRecord
 from z3 import *
 
@@ -55,18 +57,27 @@ class GcovConstraint:
             for arc in outgoing_arc:
                 outgoing_sum += Int("arc" + str(arc.source_block_number) + "_" + str(arc.destination_block_number))
             solver.add(incoming_sum == outgoing_sum)
-        solver.add(Int("x" + str(self.counter_list[index].source_block_number) + "_" + str(self.counter_list[index].
-                                                                                           destination_block_number))
+        solver.add(Int("arc" + str(self.counter_list[index].source_block_number) + "_" + str(self.counter_list[index].
+                                                                                             destination_block_number))
                    == value)
-        if solver.check() == sat:
+        solutions = []
+        while solver.check() == sat:
+            if len(solutions) > 1000:
+                break
             model = solver.model()
-            result = []
+            solution = []
             for counter in self.counter_list:
-                result.append(
-                    model[Int("x" + str(counter.source_block_number) + "_" + str(counter.destination_block_number))])
-            return result
-        else:
+                solution.append(
+                    model[Int("arc" + str(counter.source_block_number) + "_" + str(counter.destination_block_number))].as_long())
+            solutions.append(solution)
+            block = []
+            for d in model:
+                c = d()
+                block.append(c != model[d])
+            solver.add(Or(block))
+        if not solutions:
             return False
+        return random.choice(solutions)
 
 
 class Constraint:
