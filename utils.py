@@ -59,17 +59,44 @@ def generate_compile(file_name):
 
 def gcc_recompile(gcda):
     cmd = "gcc -w -fprofile-use " + gcda.source_file_name + ".c -o " + gcda.source_file_name + "_mut"
-    result = os.system(cmd)
-    if result != 0:
-        cmd = "gcc -w -fprofile-use " + gcda.source_file_name + ".c -o " + gcda.source_file_name + "_mut"
-        os.system(cmd)
+    os.system(cmd)
+    cmd = "./" + gcda.source_file_name + "_mut > " + gcda.source_file_name + "_mut.txt"
+    os.system(cmd)
+    cmd = "gcc -w -O1 -fprofile-use " + gcda.source_file_name + ".c -o " + gcda.source_file_name + "_mut"
+    os.system(cmd)
+    cmd = "./" + gcda.source_file_name + "_mut > " + gcda.source_file_name + "_mut_O1.txt"
+    os.system(cmd)
+    cmd = "gcc -w -O2 -fprofile-use " + gcda.source_file_name + ".c -o " + gcda.source_file_name + "_mut"
+    os.system(cmd)
+    cmd = "./" + gcda.source_file_name + "_mut > " + gcda.source_file_name + "_mut_O2.txt"
+    os.system(cmd)
+    cmd = "gcc -w -O3 -fprofile-use " + gcda.source_file_name + ".c -o " + gcda.source_file_name + "_mut"
+    os.system(cmd)
+    cmd = "./" + gcda.source_file_name + "_mut > " + gcda.source_file_name + "_mut_O3.txt"
+    os.system(cmd)
+    cmd = "gcc -w -Og -fprofile-use " + gcda.source_file_name + ".c -o " + gcda.source_file_name + "_mut"
+    os.system(cmd)
+    cmd = "./" + gcda.source_file_name + "_mut > " + gcda.source_file_name + "_mut_Og.txt"
+    os.system(cmd)
+    cmd = "gcc -w -Os -fprofile-use " + gcda.source_file_name + ".c -o " + gcda.source_file_name + "_mut"
+    os.system(cmd)
+    cmd = "./" + gcda.source_file_name + "_mut > " + gcda.source_file_name + "_mut_Os.txt"
+    os.system(cmd)
 
 
 def differential_test(gcda):
-    cmd = "./" + gcda.source_file_name + "_mut > " + gcda.source_file_name + "_mut.txt"
-    os.system(cmd)
     cmd = "diff " + gcda.source_file_name + ".txt " + gcda.source_file_name + "_mut.txt"
     result = os.system(cmd)
+    cmd = "diff " + gcda.source_file_name + ".txt " + gcda.source_file_name + "_mut_O1.txt"
+    result += os.system(cmd)
+    cmd = "diff " + gcda.source_file_name + ".txt " + gcda.source_file_name + "_mut_O2.txt"
+    result += os.system(cmd)
+    cmd = "diff " + gcda.source_file_name + ".txt " + gcda.source_file_name + "_mut_O3.txt"
+    result += os.system(cmd)
+    cmd = "diff " + gcda.source_file_name + ".txt " + gcda.source_file_name + "_mut_Og.txt"
+    result += os.system(cmd)
+    cmd = "diff " + gcda.source_file_name + ".txt " + gcda.source_file_name + "_mut_Os.txt"
+    result += os.system(cmd)
     if result != 0:
         print("bug found in " + gcda.source_file_name)
         save_bug_report(gcda.source_file_name)
