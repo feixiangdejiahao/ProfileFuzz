@@ -62,25 +62,25 @@ def gcc_recompile(gcda):
     os.system(cmd)
     cmd = "./" + gcda.source_file_name + "_mut > " + gcda.source_file_name + "_mut.txt"
     os.system(cmd)
-    cmd = "gcc -w -O1 -fprofile-use " + gcda.source_file_name + ".c -o " + gcda.source_file_name + "_mut_O1"
+    cmd = "gcc -w -O1 -fprofile-use " + gcda.source_file_name + ".c -o " + gcda.source_file_name + "_mut"
     os.system(cmd)
-    cmd = "./" + gcda.source_file_name + "_mut_O1 > " + gcda.source_file_name + "_mut_O1.txt"
+    cmd = "./" + gcda.source_file_name + "_mut > " + gcda.source_file_name + "_mut_O1.txt"
     os.system(cmd)
-    cmd = "gcc -w -O2 -fprofile-use " + gcda.source_file_name + ".c -o " + gcda.source_file_name + "_mut_O2"
+    cmd = "gcc -w -O2 -fprofile-use " + gcda.source_file_name + ".c -o " + gcda.source_file_name + "_mut"
     os.system(cmd)
-    cmd = "./" + gcda.source_file_name + "_mut_O2 > " + gcda.source_file_name + "_mut_O2.txt"
+    cmd = "./" + gcda.source_file_name + "_mut > " + gcda.source_file_name + "_mut_O2.txt"
     os.system(cmd)
-    cmd = "gcc -w -O3 -fprofile-use " + gcda.source_file_name + ".c -o " + gcda.source_file_name + "_mut_O3"
+    cmd = "gcc -w -O3 -fprofile-use " + gcda.source_file_name + ".c -o " + gcda.source_file_name + "_mut"
     os.system(cmd)
-    cmd = "./" + gcda.source_file_name + "_mut_O3 > " + gcda.source_file_name + "_mut_O3.txt"
+    cmd = "./" + gcda.source_file_name + "_mut > " + gcda.source_file_name + "_mut_O3.txt"
     os.system(cmd)
-    cmd = "gcc -w -Og -fprofile-use " + gcda.source_file_name + ".c -o " + gcda.source_file_name + "_mut_Og"
+    cmd = "gcc -w -Og -fprofile-use " + gcda.source_file_name + ".c -o " + gcda.source_file_name + "_mut"
     os.system(cmd)
-    cmd = "./" + gcda.source_file_name + "_mut_Og > " + gcda.source_file_name + "_mut_Og.txt"
+    cmd = "./" + gcda.source_file_name + "_mut > " + gcda.source_file_name + "_mut_Og.txt"
     os.system(cmd)
-    cmd = "gcc -w -Os -fprofile-use " + gcda.source_file_name + ".c -o " + gcda.source_file_name + "_mut_Os"
+    cmd = "gcc -w -Os -fprofile-use " + gcda.source_file_name + ".c -o " + gcda.source_file_name + "_mut"
     os.system(cmd)
-    cmd = "./" + gcda.source_file_name + "_mut_Os > " + gcda.source_file_name + "_mut_Os.txt"
+    cmd = "./" + gcda.source_file_name + "_mut > " + gcda.source_file_name + "_mut_Os.txt"
     os.system(cmd)
     cmd = "clang -w " + gcda.source_file_name + ".c -o " + gcda.source_file_name + "_mut"
     os.system(cmd)
