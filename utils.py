@@ -82,7 +82,7 @@ def gcc_recompile(gcda):
     os.system(cmd)
     cmd = "./" + gcda.source_file_name + "_mut_Os > " + gcda.source_file_name + "_mut_Os.txt"
     os.system(cmd)
-    cmd = "clang " + gcda.source_file_name + ".c -o " + gcda.source_file_name + "_mut"
+    cmd = "clang -w " + gcda.source_file_name + ".c -o " + gcda.source_file_name + "_mut"
     os.system(cmd)
     cmd = "./" + gcda.source_file_name + "_mut > " + gcda.source_file_name + "_mut_clang.txt"
     os.system(cmd)
