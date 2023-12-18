@@ -11,7 +11,6 @@ def main():
     file_name = sys.argv[2]
     mutation_number = int(sys.argv[3])
     gcda, method_constraint_dict, method_block_dict = init(dir_path, file_name)
-    mutation_number = min(mutation_number, len(method_constraint_dict))
     function_index = [gcda.records.index(record) for record in gcda.records if
                       isinstance(record, GCovDataFunctionAnnouncementRecord)]
     for i in range(mutation_number):

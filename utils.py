@@ -95,6 +95,14 @@ def gcc_recompile(gcda):
     os.system(cmd)
     cmd = "./" + gcda.source_file_name + "_mut > " + gcda.source_file_name + "_mut_Os.txt"
     os.system(cmd)
+    cmd = "gcc -w -Ofast -fprofile-use " + gcda.source_file_name + ".c -o " + gcda.source_file_name + "_mut"
+    os.system(cmd)
+    cmd = "./" + gcda.source_file_name + "_mut > " + gcda.source_file_name + "_mut_Ofast.txt"
+    os.system(cmd)
+    cmd = "gcc -w -Oz -fprofile-use " + gcda.source_file_name + ".c -o " + gcda.source_file_name + "_mut"
+    os.system(cmd)
+    cmd = "./" + gcda.source_file_name + "_mut > " + gcda.source_file_name + "_mut_Oz.txt"
+    os.system(cmd)
     cmd = "clang -w " + gcda.source_file_name + ".c -o " + gcda.source_file_name + "_mut"
     os.system(cmd)
     cmd = "./" + gcda.source_file_name + "_mut > " + gcda.source_file_name + "_mut_clang.txt"
@@ -113,6 +121,10 @@ def differential_test(gcda):
     cmd = "diff " + gcda.source_file_name + ".txt " + gcda.source_file_name + "_mut_Og.txt"
     result += os.system(cmd)
     cmd = "diff " + gcda.source_file_name + ".txt " + gcda.source_file_name + "_mut_Os.txt"
+    result += os.system(cmd)
+    cmd = "diff " + gcda.source_file_name + ".txt " + gcda.source_file_name + "_mut_Ofast.txt"
+    result += os.system(cmd)
+    cmd = "diff " + gcda.source_file_name + ".txt " + gcda.source_file_name + "_mut_Oz.txt"
     result += os.system(cmd)
     cmd = "diff " + gcda.source_file_name + ".txt " + gcda.source_file_name + "_mut_clang.txt"
     result += os.system(cmd)
