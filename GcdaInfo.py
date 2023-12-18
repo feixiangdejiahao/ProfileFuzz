@@ -178,69 +178,6 @@ class GcdaInfo:
         self.records = records
         return
 
-    def mutate(self, method_constraint_dict):
-        function_index = [self.records.index(record) for record in self.records if
-                          isinstance(record, GCovDataFunctionAnnouncementRecord)]
-        while True:
-            index = random.choice(function_index)
-            function = self.records[index]
-            constraints = method_constraint_dict[function.ident]
-            record = self.records[index + 1]
-            if isinstance(record, GCovDataCounterBaseRecord):
-                index = random.randint(0, len(record.counters) - 1)
-                counter = record.counters[index]
-                if counter >= 0:
-                    value = 0
-                else:
-                    value = random.randint(0, 2 ** 32 - 1)
-                result = constraints.solve(index, value)
-                if isinstance(result, list):
-                    record.counters = result
-                    break
-
-    @staticmethod
-    def extremum_mutation(record):
-        if isinstance(record, GCovDataCounterBaseRecord):
-            data = record.counters
-            if random.randint(0, 1):
-                data[random.randint(0, len(data) - 1)] = 2 ** 32 - 1
-            else:
-                data[random.randint(0, len(data) - 1)] = 0
-        else:
-            data = record.time_profiler
-            if random.randint(0, 1):
-                data[random.randint(0, len(data) - 1)] = 2 ** 31 - 1
-            else:
-                data[random.randint(0, len(data) - 1)] = 0
-
-    @staticmethod
-    def one_value_mutation(record):
-        if isinstance(record, GCovDataCounterBaseRecord):
-            data = record.counters
-            index = random.randint(0, len(data) - 1)
-            if random.randint(0, 1):
-                if data[index] == 2 ** 32 - 1:
-                    data[index] -= 1
-                else:
-                    data[index] += 1
-            else:
-                if data[index] == 0:
-                    data[index] += 1
-                else:
-                    data[index] -= 1
-        else:
-            data = record.time_profiler
-            index = random.randint(0, len(data) - 1)
-            if random.randint(0, 1):
-                if data[index] == 2 ** 31 - 1:
-                    data[index] -= 1
-                else:
-                    data[index] += 1
-            else:
-                if data[index] == 0:
-                    data[index] += 1
-                else:
-                    data[index] -= 1
 
     def pull_records(self):
         """

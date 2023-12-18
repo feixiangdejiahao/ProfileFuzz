@@ -1,12 +1,13 @@
 import os
+import random
 import shutil
 
-from GcdaInfo import GcdaInfo
+from GcdaInfo import GcdaInfo, GCovDataCounterBaseRecord
 from GcnoInfo import GcnoInfo, GcovNoteFunctionAnnouncementRecord
 from GcovConstraint import GcovConstraint
 
 
-def construct(gcno):
+def construct_constraint(gcno):
     records = gcno.records
     function_announce_record_index = [records.index(record) for record in records if
                                       isinstance(record, GcovNoteFunctionAnnouncementRecord)]
@@ -20,12 +21,24 @@ def construct(gcno):
     return method_constraint_dict
 
 
-def build_constraint(file_name):
+def construct_block(gcno):
+    records = gcno.records
+    function_announce_record_index = [records.index(record) for record in records if
+                                      isinstance(record, GcovNoteFunctionAnnouncementRecord)]
+    method_block_dict = {}
+    for i in range(len(function_announce_record_index)):
+        ident = records[function_announce_record_index[i]].ident
+        method_block_dict[ident] = records[function_announce_record_index[i] + 1].block_count
+    return method_block_dict
+
+
+def get_basic_info(file_name):
     gcno = GcnoInfo()
     gcno.load(file_name + ".gcno")
     gcno.pull_records()
-    method_constraint_dict = construct(gcno)
-    return method_constraint_dict
+    method_constraint_dict = construct_constraint(gcno)
+    method_block_dict = construct_block(gcno)
+    return method_constraint_dict, method_block_dict
 
 
 def init(dir_path, file_name):
@@ -35,8 +48,8 @@ def init(dir_path, file_name):
     os.makedirs(dir_path + file_name)
     os.chdir(dir_path + file_name)
     gcda = generate_compile(file_name)
-    method_constraint_dict = build_constraint(file_name)
-    return gcda, method_constraint_dict
+    method_constraint_dict, method_block_dict = get_basic_info(file_name)
+    return gcda, method_constraint_dict, method_block_dict
 
 
 def generate_compile(file_name):
@@ -116,9 +129,19 @@ def calculate_similarity(file_name, i):
     os.system(cmd)
 
 
-def mutate(gcda, method_constraint_dict):
-    gcda.mutate(method_constraint_dict)
-    gcda.save()
+def mutate(constraints, record):
+    while True:
+        if isinstance(record, GCovDataCounterBaseRecord):
+            index = random.randint(0, len(record.counters) - 1)
+            counter = record.counters[index]
+            if counter >= 0:
+                value = 0
+            else:
+                value = random.randint(0, 2 ** 32 - 1)
+            result = constraints.solve(index, value)
+            if isinstance(result, list):
+                record.counters = result
+                break
 
 
 def save_bug_report(file_name):
