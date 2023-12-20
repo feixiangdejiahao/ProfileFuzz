@@ -53,12 +53,12 @@ def init_csmith(dir_path, file_name):
 
 
 def generate_compile_yarpgen(file_name):
-    # generate_cmd = "yarpgen --std=c"
+    generate_cmd = "yarpgen --std=c"
     compile_cmd = "gcc -w --coverage driver.c func.c -o " + file_name
     execute_cmd = "timeout 30s ./" + file_name
     while True:
         result = 0
-        # result = os.system(generate_cmd)
+        result = os.system(generate_cmd)
         result += os.system(compile_cmd)
         result += os.system(execute_cmd)
         if result == 0:
