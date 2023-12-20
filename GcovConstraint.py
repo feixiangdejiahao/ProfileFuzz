@@ -74,7 +74,7 @@ class GcovConstraint:
             for d in model:
                 c = d()
                 block.append(c != model[d])
-            solver.add(Or(block))
+            solver.add(And(block))
         if not solutions:
             return False
         return random.choice(solutions)
