@@ -2,6 +2,8 @@ import os
 import random
 import shutil
 import subprocess
+import time
+
 from GcdaInfo import GcdaInfo, GCovDataCounterBaseRecord
 from GcnoInfo import GcnoInfo, GcovNoteFunctionAnnouncementRecord
 from GcovConstraint import GcovConstraint
@@ -228,6 +230,7 @@ def execute_command(command):
 
 
 def save_bug_report(file_name):
-    os.makedirs("../bug_report/" + file_name, exist_ok=True)
-    cmd = "cp * ../bug_report/" + file_name
+    time_stamp = str(int(time.time()))
+    os.makedirs("../bug_report/" + file_name + "_" + time_stamp, exist_ok=True)
+    cmd = "cp * ../bug_report/" + file_name + "_" + time_stamp
     os.system(cmd)
