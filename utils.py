@@ -228,10 +228,13 @@ def counter_mutate(constraints, record):
                 break
 
 
+not_a_bug = ["relink with --no-relax"]
+
+
 def execute_command(command):
     process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     stdout, stderr = process.communicate()
-    if process.returncode != 0:
+    if process.returncode != 0 and not any(x in stderr.decode() for x in not_a_bug):
         print("Error executing command:", command)
         print(stderr)
     return stdout
