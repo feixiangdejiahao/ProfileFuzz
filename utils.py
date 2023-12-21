@@ -125,8 +125,8 @@ def gcc_recompile_csmith(gcda):
     optimization_levels = ["", "-O1", "-O2", "-O3", "-Og", "-Os", "-Ofast"]
     clang_cmd = ["clang", "-w"]
 
-    source_file = gcda.source_file_name + ".c"
-    output_base = gcda.source_file_name + "_mut"
+    source_file = gcda.target_binary_name + ".c"
+    output_base = gcda.target_binary_name + "_mut"
 
     for opt in optimization_levels:
         compiled_name = output_base + opt.replace("-", "_") + ".txt"
@@ -143,23 +143,23 @@ def gcc_recompile_csmith(gcda):
 
 def differential_test(gcda):
     optimization_levels = ["", "_O1", "_O2", "_O3", "_Og", "_Os", "_Ofast", "_clang"]
-    source_file_base = gcda.source_file_name
-    cmd = "diff --from-file " + source_file_base + ".txt "
+    target_binary_name = gcda.target_binary_name
+    cmd = "diff --from-file " + target_binary_name + ".txt "
     for opt in optimization_levels:
-        cmd += f"{source_file_base}_mut{opt}.txt "
+        cmd += f"{target_binary_name}_mut{opt}.txt "
     bug_found = os.system(cmd)
     if not bug_found:
-        print(f"No bugs found in {source_file_base}")
+        print(f"No bugs found in {target_binary_name}")
     else:
-        print(f"Bug found in {source_file_base}")
-        save_bug_report(source_file_base)
+        print(f"Bug found in {target_binary_name}")
+        save_bug_report(target_binary_name)
 
 
-def delete_old_file(source_file_name):
-    if os.path.exists(source_file_name + "_mut"):
-        os.remove(source_file_name + "_mut")
-    if os.path.exists(source_file_name + "_mut_O1.txt"):
-        cmd = "rm " + source_file_name + "_mut_*.txt"
+def delete_old_file(target_binary_name):
+    if os.path.exists(target_binary_name + "_mut"):
+        os.remove(target_binary_name + "_mut")
+    if os.path.exists(target_binary_name + "_mut_O1.txt"):
+        cmd = "rm " + target_binary_name + "_mut_*.txt"
         os.system(cmd)
 
 
@@ -170,8 +170,8 @@ def gcc_recompile_yarpgen(gcda_driver):
 
     driver_file = "driver.c"
     func_file = "func.c"
-    output_base = gcda_driver.source_file_name + "_mut"
-    delete_old_file(gcda_driver.source_file_name)
+    output_base = gcda_driver.target_binary_name + "_mut"
+    delete_old_file(gcda_driver.target_binary_name)
     for opt in optimization_levels:
         compiled_name = output_base + opt.replace("-", "_") + ".txt"
         cmd = base_cmd + [opt, driver_file, func_file, "-o", output_base]
@@ -186,7 +186,7 @@ def gcc_recompile_yarpgen(gcda_driver):
 
 
 def calculate_similarity(gcda):
-    file_name = gcda.source_file_name
+    file_name = gcda.target_binary_name
     cmd = "radiff2 -s " + file_name + "_O3 " + file_name + "_mut_O3"
     sim = os.popen(cmd).read()
 
