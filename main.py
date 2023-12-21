@@ -17,14 +17,7 @@ def main():
         function_index = [gcda.records.index(record) for record in gcda.records if
                           isinstance(record, GCovDataFunctionAnnouncementRecord)]
         for i in range(mutation_number):
-            method_indent_driver = select_method_by_block(method_block_dict)
-            index = 0
-            for index in function_index:
-                if gcda.records[index].ident == method_indent_driver:
-                    break
-            constraints = method_constraint_dict[method_indent_driver]
-            record = gcda.records[index + 1]
-            mutate(constraints, record)
+            gcda_mutate(gcda, method_constraint_dict, method_block_dict, function_index)
             gcc_recompile_csmith(gcda)
             differential_test(gcda)
 
@@ -36,17 +29,8 @@ def main():
         function_index_func = [gcda_func.records.index(record) for record in gcda_func.records if
                                isinstance(record, GCovDataFunctionAnnouncementRecord)]
         for i in range(mutation_number):
-            method_indent_driver = select_method_by_block(method_block_dict_driver)
-            index = 0
-            for index in function_index_driver:
-                if gcda_driver.records[index].ident == method_indent_driver:
-                    break
-            constraints = method_constraint_dict_driver[method_indent_driver]
-            record = gcda_driver.records[index + 1]
-            mutate(constraints, record)
-            constraints =list(method_constraint_dict_func.values())[0]
-            record = gcda_func.records[function_index_func[0] + 1]
-            mutate(constraints, record)
+            gcda_mutate(gcda_driver, method_constraint_dict_driver, method_block_dict_driver, function_index_driver)
+            gcda_mutate(gcda_func, method_constraint_dict_func, method_block_dict_func, function_index_func)
             gcc_recompile_yarpgen(gcda_driver)
             differential_test(gcda_driver)
     else:

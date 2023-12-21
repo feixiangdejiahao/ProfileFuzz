@@ -5,6 +5,7 @@ import subprocess
 from GcdaInfo import GcdaInfo, GCovDataCounterBaseRecord
 from GcnoInfo import GcnoInfo, GcovNoteFunctionAnnouncementRecord
 from GcovConstraint import GcovConstraint
+from main import select_method_by_block
 
 
 def construct_constraint(gcno):
@@ -190,7 +191,19 @@ def calculate_similarity(gcda):
     sim = os.popen(cmd).read()
 
 
-def mutate(constraints, record):
+def gcda_mutate(gcda, method_constraint_dict, method_block_dict, function_index):
+    method_indent_driver = select_method_by_block(method_block_dict)
+    index = 0
+    for index in function_index:
+        if gcda.records[index].ident == method_indent_driver:
+            break
+    constraints = method_constraint_dict[method_indent_driver]
+    record = gcda.records[index + 1]
+    counter_mutate(constraints, record)
+    gcda.save(gcda.target_binary_name + "_mut-" + gcda.source_file_name + ".gcda")
+
+
+def counter_mutate(constraints, record):
     while True:
         if isinstance(record, GCovDataCounterBaseRecord):
             index = random.randint(0, len(record.counters) - 1)
