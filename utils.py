@@ -158,10 +158,11 @@ def differential_test(gcda):
 
 
 def delete_old_file(source_file_name):
-    cmd = "rm " + source_file_name + "_mut"
-    os.system(cmd)
-    cmd = "rm " + source_file_name + "_mut_*.txt"
-    os.system(cmd)
+    if os.path.exists(source_file_name + "_mut"):
+        os.remove(source_file_name + "_mut")
+    if os.path.exists(source_file_name + "_mut_O1.txt"):
+        cmd = "rm " + source_file_name + "_mut_*.txt"
+        os.system(cmd)
 
 
 def gcc_recompile_yarpgen(gcda_driver):
