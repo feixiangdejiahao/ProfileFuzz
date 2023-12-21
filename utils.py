@@ -54,16 +54,14 @@ def init_csmith(dir_path, file_name):
 
 def generate_compile_yarpgen(file_name):
     generate_cmd = "yarpgen --std=c"
-    compile_cmd = "gcc -w -mcmodel=large --coverage driver.c func.c -o " + file_name + "&> /dev/null"
-    execute_cmd = "timeout 30s ./" + file_name + "&> /dev/null"
+    compile_cmd = "gcc -w -mcmodel=large --coverage driver.c func.c -o " + file_name
+    execute_cmd = "timeout 30s ./" + file_name + " > " + file_name + ".txt"
     while True:
         result = os.system(generate_cmd)
         result += os.system(compile_cmd)
         result += os.system(execute_cmd)
         if result == 0:
             break
-    cmd = "./" + file_name + " > " + file_name + ".txt"
-    os.system(cmd)
     shutil.copyfile(file_name + "-func.gcda", file_name + "_mut-func.gcda")
     shutil.copyfile(file_name + "-driver.gcda", file_name + "_mut-driver.gcda")
     gcda_driver = GcdaInfo()
