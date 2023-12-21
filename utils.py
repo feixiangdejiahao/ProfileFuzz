@@ -57,14 +57,20 @@ def init_csmith(dir_path, file_name):
 
 def generate_compile_yarpgen(file_name):
     generate_cmd = "yarpgen --std=c"
-    compile_cmd = "gcc -w -mcmodel=large --coverage driver.c func.c -o " + file_name
+    compile_cmd = "gcc -w --coverage driver.c func.c -o " + file_name
     execute_cmd = "timeout 30s ./" + file_name + " > " + file_name + ".txt 2>&1"
     while True:
-        result = os.system(generate_cmd)
-        result += os.system(compile_cmd)
-        result += os.system(execute_cmd)
+        result = execute_command(generate_cmd)
+        result += execute_command(compile_cmd)
+        result += execute_command(execute_cmd)
         if result == 0:
             break
+    cmd = "gcc -w -O3 -fprofile-use driver.c func.c -o " + file_name  # backup -O3 version and use it to compare similarity
+    execute_command(cmd)
+    cmd = "mv " + file_name + " " + file_name + "_O3"
+    execute_command(cmd)
+    cmd = "gcc -o " + file_name + " driver.c func.c"
+    execute_command(cmd)
     shutil.copyfile(file_name + "-func.gcda", file_name + "_mut-func.gcda")
     shutil.copyfile(file_name + "-driver.gcda", file_name + "_mut-driver.gcda")
     gcda_driver = GcdaInfo()
@@ -108,11 +114,15 @@ def generate_compile_csmith(file_name):
     execute_cmd = "timeout 30s ./" + file_name + " > " + file_name + ".txt 2>&1"
     result = 1
     while result != 0:
-        os.system(generate_cmd)
-        os.system(compile_cmd)
-        result = os.system(execute_cmd)
-    cmd = "gcc -w -O3 -fprofile-use " + file_name + ".c -o " + file_name + "_O3"
-    os.system(cmd)
+        execute_command(generate_cmd)
+        execute_command(compile_cmd)
+        result = execute_command(execute_cmd)
+    cmd = "gcc -w -O3 -fprofile-use " + file_name + ".c -o " + file_name + "_O3"  # backup -O3 version and use it to compare similarity
+    execute_command(cmd)
+    cmd = "mv " + file_name + " " + file_name + "_O3"
+    execute_command(cmd)
+    cmd = "gcc -o " + file_name + " " + file_name + ".c"
+    execute_command(cmd)
     shutil.copyfile(file_name + ".gcda", file_name + "_mut-" + file_name + ".gcda")
     gcda = GcdaInfo()
     gcda.load(file_name + "_mut-" + file_name + ".gcda")
@@ -147,7 +157,7 @@ def differential_test(gcda):
     cmd = "diff --from-file " + target_binary_name + ".txt "
     for opt in optimization_levels:
         cmd += f"{target_binary_name}_mut{opt}.txt "
-    bug_found = os.system(cmd)
+    bug_found = execute_command(cmd)
     if not bug_found:
         print(f"No bugs found in {target_binary_name}")
     else:
@@ -160,7 +170,7 @@ def delete_old_file(target_binary_name):
         os.remove(target_binary_name + "_mut")
     if os.path.exists(target_binary_name + "_mut_O1.txt"):
         cmd = "rm " + target_binary_name + "_mut_*.txt"
-        os.system(cmd)
+        execute_command(cmd)
 
 
 def gcc_recompile_yarpgen(gcda_driver):
@@ -229,8 +239,8 @@ def execute_command(command):
 
 def save_bug_report(file_name, cmd):
     cmd = "echo " + cmd + " > " + "diff_cmd.txt"
-    os.system(cmd)
+    execute_command(cmd)
     time_stamp = str(int(time.time()))
     os.makedirs("../bug_report/" + file_name + "_" + time_stamp, exist_ok=True)
     cmd = "cp * ../bug_report/" + file_name + "_" + time_stamp
-    os.system(cmd)
+    execute_command(cmd)
