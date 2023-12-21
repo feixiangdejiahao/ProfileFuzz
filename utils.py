@@ -63,6 +63,9 @@ def generate_compile_yarpgen(file_name):
         result += os.system(execute_cmd)
         if result == 0:
             break
+        else:
+            print("Error generating file")
+            exit(-1)
     cmd = "./" + file_name + " > " + file_name + ".txt"
     os.system(cmd)
     shutil.copyfile(file_name + "-func.gcda", file_name + "_mut-func.gcda")
