@@ -57,15 +57,11 @@ def generate_compile_yarpgen(file_name):
     compile_cmd = "gcc -w -mcmodel=large --coverage driver.c func.c -o " + file_name
     execute_cmd = "timeout 30s ./" + file_name
     while True:
-        result = 0
         result = os.system(generate_cmd)
         result += os.system(compile_cmd)
         result += os.system(execute_cmd)
         if result == 0:
             break
-        else:
-            print("Error generating file: " + file_name)
-            exit(-1)
     cmd = "./" + file_name + " > " + file_name + ".txt"
     os.system(cmd)
     shutil.copyfile(file_name + "-func.gcda", file_name + "_mut-func.gcda")
