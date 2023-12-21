@@ -236,9 +236,8 @@ def execute_command(command):
     stdout, stderr = process.communicate()
     if process.returncode != 0 and not any(x in stderr.decode() for x in not_a_bug):
         print("Error executing command:", command)
-        print(stderr)
-        exit(-1)
-    return stdout
+        print(stderr.decode())
+    return process.returncode
 
 
 def save_bug_report(file_name, cmd):
