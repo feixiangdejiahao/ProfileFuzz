@@ -237,6 +237,7 @@ def execute_command(command):
     if process.returncode != 0 and not any(x in stderr.decode() for x in not_a_bug):
         print("Error executing command:", command)
         print(stderr)
+        exit(-1)
     return stdout
 
 
