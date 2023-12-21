@@ -155,6 +155,13 @@ def differential_test(gcda):
         save_bug_report(source_file_base)
 
 
+def clear_old_file(source_file_name):
+    cmd = "rm " + source_file_name + "_mut"
+    os.system(cmd)
+    cmd = "rm " + source_file_name + "_mut_*.txt"
+    os.system(cmd)
+
+
 def gcc_recompile_yarpgen(gcda_driver):
     base_cmd = ["gcc", "-w", "-fprofile-use"]
     optimization_levels = ["", "-O1", "-O2", "-O3", "-Og", "-Os", "-Ofast"]
@@ -163,7 +170,7 @@ def gcc_recompile_yarpgen(gcda_driver):
     driver_file = "driver.c"
     func_file = "func.c"
     output_base = gcda_driver.source_file_name + "_mut"
-
+    clear_old_file(gcda_driver.source_file_name)
     for opt in optimization_levels:
         compiled_name = output_base + opt.replace("-", "_") + ".txt"
         cmd = base_cmd + [opt, driver_file, func_file, "-o", output_base]
