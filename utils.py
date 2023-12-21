@@ -64,7 +64,7 @@ def generate_compile_yarpgen(file_name):
         if result == 0:
             break
         else:
-            print("Error generating file")
+            print("Error generating file: " + file_name")
             exit(-1)
     cmd = "./" + file_name + " > " + file_name + ".txt"
     os.system(cmd)
