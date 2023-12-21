@@ -127,7 +127,7 @@ def gcc_recompile_csmith(gcda):
 
     source_file = gcda.target_binary_name + ".c"
     output_base = gcda.target_binary_name + "_mut"
-
+    delete_old_file(gcda.target_binary_name)
     for opt in optimization_levels:
         compiled_name = output_base + opt.replace("-", "_") + ".txt"
         cmd = base_cmd + [opt, source_file, "-o", output_base]
@@ -228,16 +228,6 @@ def execute_command(command):
 
 
 def save_bug_report(file_name):
-    os.makedirs("../bug_report/" + file_name)
-    # copy source code
-    shutil.copyfile(file_name + ".c", "../bug_report/" + file_name + "/" + file_name + ".c")
-    # copy result
-    shutil.copyfile(file_name + ".txt", "../bug_report/" + file_name + "/" + file_name + ".txt")
-    shutil.copyfile(file_name + "_mut.txt",
-                    "../bug_report/" + file_name + "/" + file_name + "_mut.txt")
-    # copy gcda file
-    shutil.copyfile(file_name + "_mut-" + file_name + ".gcda",
-                    "../bug_report/" + file_name + "/" + file_name + "_mut-" + file_name + ".gcda")
-    # copy executable file
-    shutil.copyfile(file_name + "_mut", "../bug_report/" + file_name + "/" + file_name + "_mut")
-    shutil.copyfile(file_name, "../bug_report/" + file_name + "/" + file_name)
+    os.makedirs("../bug_report/" + file_name, exist_ok=True)
+    cmd = "cp * ../bug_report/" + file_name
+    os.system(cmd)
