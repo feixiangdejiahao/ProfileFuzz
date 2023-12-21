@@ -152,7 +152,7 @@ def differential_test(gcda):
         print(f"No bugs found in {target_binary_name}")
     else:
         print(f"Bug found in {target_binary_name}")
-        save_bug_report(target_binary_name)
+        save_bug_report(target_binary_name, cmd)
 
 
 def delete_old_file(target_binary_name):
@@ -227,7 +227,9 @@ def execute_command(command):
     return stdout
 
 
-def save_bug_report(file_name):
+def save_bug_report(file_name, cmd):
+    cmd = "echo " + cmd + " > " + "diff_cmd.txt"
+    os.system(cmd)
     time_stamp = str(int(time.time()))
     os.makedirs("../bug_report/" + file_name + "_" + time_stamp, exist_ok=True)
     cmd = "cp * ../bug_report/" + file_name + "_" + time_stamp
