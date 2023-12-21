@@ -256,11 +256,11 @@ class GcdaInfo:
 
         if detect_endianess:
             if magic == GcovConst.GCDA_FILE_MAGIC_BIGENDIAN:
-                print("Big Endian GCDA")
+                # print("Big Endian GCDA")
                 self.pack_str32 = GcovConst.PACKUINT32_BIGENDIAN
             elif magic == GcovConst.GCDA_FILE_MAGIC:
-                print("Little Endian GCDA")
-
+                # print("Little Endian GCDA")
+                self.pack_str32 = GcovConst.PACKUINT32
         version = GcovIO.read_quad_char(file_handle)
         stamp = GcovIO.read_uint32(file_handle)
 
@@ -277,9 +277,9 @@ class GcdaInfo:
 
             bytes_remaining = file_size - cur_pos
             if bytes_remaining < 8:
-                print("Reached the end of file without enough bytes remaining to read a complete record.")
-                print("filename=%s" % self.filename)
-                print("bytesRemaining=%d" % bytes_remaining)
+                # print("Reached the end of file without enough bytes remaining to read a complete record.")
+                # print("filename=%s" % self.filename)
+                # print("bytesRemaining=%d" % bytes_remaining)
 
                 extra_buffer = file_handle.read(bytes_remaining)
                 extra_bytes = ""
@@ -287,7 +287,7 @@ class GcdaInfo:
                 for byte in extra_buffer:
                     extra_bytes += "0x%x " % byte
 
-                print("extraBytes=%s" % extra_bytes)
+                # print("extraBytes=%s" % extra_bytes)
 
                 break
 

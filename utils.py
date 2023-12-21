@@ -141,29 +141,18 @@ def gcc_recompile_csmith(gcda):
     execute_command(f"./{output_base} > {clang_compiled_name}")
 
 
-def execute_diff_command(file1, file2):
-    command = f"diff {file1} {file2}"
-    process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    _, _ = process.communicate()
-    return process.returncode
-
-
 def differential_test(gcda):
     optimization_levels = ["", "_O1", "_O2", "_O3", "_Og", "_Os", "_Ofast", "_clang"]
     source_file_base = gcda.source_file_name
-    bug_found = False
-
+    cmd = "diff --from-file " + source_file_base + ".txt "
     for opt in optimization_levels:
-        file1 = f"{source_file_base}.txt"
-        file2 = f"{source_file_base}_mut{opt}.txt"
-        if execute_diff_command(file1, file2) != 0:
-            print(f"bug found in {source_file_base} with optimization {opt}")
-            save_bug_report(source_file_base)
-            bug_found = True
-            break
-
+        cmd += f"{source_file_base}_mut{opt}.txt "
+    bug_found = os.system(cmd)
     if not bug_found:
         print(f"No bugs found in {source_file_base}")
+    else:
+        print(f"Bug found in {source_file_base}")
+        save_bug_report(source_file_base)
 
 
 def gcc_recompile_yarpgen(gcda_driver):
