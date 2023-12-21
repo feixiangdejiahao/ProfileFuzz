@@ -58,7 +58,7 @@ def init_csmith(dir_path, file_name):
 def generate_compile_yarpgen(file_name):
     generate_cmd = "yarpgen --std=c"
     compile_cmd = "gcc -w -mcmodel=large --coverage driver.c func.c -o " + file_name
-    execute_cmd = "timeout 30s ./" + file_name + " > " + file_name + ".txt"
+    execute_cmd = "timeout 30s ./" + file_name + " &> " + file_name + ".txt"
     while True:
         result = os.system(generate_cmd)
         result += os.system(compile_cmd)
@@ -111,7 +111,7 @@ def generate_compile_csmith(file_name):
         os.system(generate_cmd)
         os.system(compile_cmd)
         result = os.system(execute_cmd)
-    cmd = "./" + file_name + " > " + file_name + ".txt"
+    cmd = "./" + file_name + " &> " + file_name + ".txt"
     os.system(cmd)
     cmd = "gcc -w -O3 -fprofile-use " + file_name + ".c -o " + file_name + "_O3"
     os.system(cmd)
@@ -134,13 +134,13 @@ def gcc_recompile_csmith(gcda):
         compiled_name = output_base + opt.replace("-", "_") + ".txt"
         cmd = base_cmd + [opt, source_file, "-o", output_base]
         execute_command(" ".join(cmd))
-        execute_command(f"./{output_base} > {compiled_name}")
+        execute_command(f"./{output_base} &> {compiled_name}")
 
     # Clang Compilation
     clang_compiled_name = output_base + "_clang.txt"
     cmd = clang_cmd + [source_file, "-o", output_base]
     execute_command(" ".join(cmd))
-    execute_command(f"./{output_base} > {clang_compiled_name}")
+    execute_command(f"./{output_base} &> {clang_compiled_name}")
 
 
 def differential_test(gcda):
@@ -178,13 +178,13 @@ def gcc_recompile_yarpgen(gcda_driver):
         compiled_name = output_base + opt.replace("-", "_") + ".txt"
         cmd = base_cmd + [opt, driver_file, func_file, "-o", output_base]
         execute_command(" ".join(cmd))
-        execute_command(f"./{output_base} > {compiled_name}")
+        execute_command(f"./{output_base} &> {compiled_name}")
 
     # Clang Compilation
     clang_compiled_name = output_base + "_clang.txt"
     cmd = clang_cmd + [driver_file, func_file, "-o", output_base]
     execute_command(" ".join(cmd))
-    execute_command(f"./{output_base} > {clang_compiled_name}")
+    execute_command(f"./{output_base} &> {clang_compiled_name}")
 
 
 def calculate_similarity(gcda):
