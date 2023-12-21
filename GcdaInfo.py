@@ -178,7 +178,6 @@ class GcdaInfo:
         self.records = records
         return
 
-
     def pull_records(self):
         """
         """
@@ -214,7 +213,7 @@ class GcdaInfo:
         if filename is not None:
             self.filename = filename
             self.file_path = os.path.dirname(filename)
-            self.source_file_name = os.path.basename(filename).split('-')[1]
+            self.source_file_name = os.path.basename(filename).split('-')[1].split('.')[0]
             self.target_binary_name = os.path.basename(filename).split('_')[0]
 
         if self.filename is None:
