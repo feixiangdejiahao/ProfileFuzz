@@ -27,8 +27,7 @@ def main():
             mutate(constraints, record)
             gcc_recompile_csmith(gcda)
             differential_test(gcda)
-            print(file_name + "'s mutation " + str(i) + " finished")
-            # calculate_similarity(file_name, i)
+
     elif generator == "yarpgen":
         gcda_driver, gcda_func, method_constraint_dict_driver, method_block_dict_driver, method_constraint_dict_func, method_block_dict_func = init_yarpgen(
             dir_path, file_name)

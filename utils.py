@@ -54,7 +54,7 @@ def init_csmith(dir_path, file_name):
 
 def generate_compile_yarpgen(file_name):
     generate_cmd = "yarpgen --std=c"
-    compile_cmd = "gcc -w --coverage driver.c func.c -o " + file_name
+    compile_cmd = "gcc -w -mcmodel=large --coverage driver.c func.c -o " + file_name
     execute_cmd = "timeout 30s ./" + file_name
     while True:
         result = 0
@@ -113,6 +113,8 @@ def generate_compile_csmith(file_name):
         result = os.system(execute_cmd)
     cmd = "./" + file_name + " > " + file_name + ".txt"
     os.system(cmd)
+    cmd = "gcc -w -O3 -fprofile-use " + file_name + ".c -o " + file_name + "_O3"
+    os.system(cmd)
     shutil.copyfile(file_name + ".gcda", file_name + "_mut-" + file_name + ".gcda")
     gcda = GcdaInfo()
     gcda.load(file_name + "_mut-" + file_name + ".gcda")
@@ -155,7 +157,7 @@ def differential_test(gcda):
         save_bug_report(source_file_base)
 
 
-def clear_old_file(source_file_name):
+def delete_old_file(source_file_name):
     cmd = "rm " + source_file_name + "_mut"
     os.system(cmd)
     cmd = "rm " + source_file_name + "_mut_*.txt"
@@ -163,14 +165,14 @@ def clear_old_file(source_file_name):
 
 
 def gcc_recompile_yarpgen(gcda_driver):
-    base_cmd = ["gcc", "-w", "-fprofile-use"]
+    base_cmd = ["gcc", "-w", "-fprofile-use", "-mcmodel=large"]
     optimization_levels = ["", "-O1", "-O2", "-O3", "-Og", "-Os", "-Ofast"]
     clang_cmd = ["clang", "-w"]
 
     driver_file = "driver.c"
     func_file = "func.c"
     output_base = gcda_driver.source_file_name + "_mut"
-    clear_old_file(gcda_driver.source_file_name)
+    delete_old_file(gcda_driver.source_file_name)
     for opt in optimization_levels:
         compiled_name = output_base + opt.replace("-", "_") + ".txt"
         cmd = base_cmd + [opt, driver_file, func_file, "-o", output_base]
@@ -184,11 +186,10 @@ def gcc_recompile_yarpgen(gcda_driver):
     execute_command(f"./{output_base} > {clang_compiled_name}")
 
 
-def calculate_similarity(file_name, i):
-    cmd = "echo \"\n=== iteration " + str(i) + " ===\n\" >> similarity.txt"
-    os.system(cmd)
-    cmd = "radiff2 -s " + file_name + " " + file_name + "_mut >> similarity.txt"
-    os.system(cmd)
+def calculate_similarity(gcda):
+    file_name = gcda.source_file_name
+    cmd = "radiff2 -s " + file_name + "_O3 " + file_name + "_mut_O3"
+    sim = os.popen(cmd).read()
 
 
 def mutate(constraints, record):
