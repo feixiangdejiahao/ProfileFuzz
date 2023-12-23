@@ -60,6 +60,8 @@ class GcovConstraint:
         solver.add(Int("arc" + str(self.counter_list[index].source_block_number) + "_" + str(self.counter_list[index].
                                                                                              destination_block_number))
                    == value)
+        for c in solver.assertions():
+            print(c)
         solutions = []
         while solver.check() == sat:
             if len(solutions) > 1000:
