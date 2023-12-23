@@ -69,8 +69,8 @@ def generate_compile_yarpgen(file_name):
     execute_command(cmd)
     cmd = "mv " + file_name + " " + file_name + "_O3"
     execute_command(cmd)
-    delete_old_gcda("func", file_name)
-    delete_old_gcda("driver", file_name)
+    # delete_old_gcda("func", file_name)
+    # delete_old_gcda("driver", file_name)
     cmd = "gcc -o " + file_name + " driver.c func.c"
     execute_command(cmd)
     shutil.copyfile(file_name + "-func.gcda", file_name + "_mut-func.gcda")
@@ -123,7 +123,7 @@ def generate_compile_csmith(file_name):
     execute_command(cmd)
     cmd = "mv " + file_name + " " + file_name + "_O3"
     execute_command(cmd)
-    delete_old_gcda(file_name, file_name)
+    # delete_old_gcda(file_name, file_name)
     cmd = "gcc -o " + file_name + " " + file_name + ".c"
     execute_command(cmd)
     shutil.copyfile(file_name + ".gcda", file_name + "_mut-" + file_name + ".gcda")
