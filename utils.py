@@ -182,7 +182,7 @@ def delete_old_gcda(source_code_name, target_binary_name):
 
 
 def gcc_recompile_yarpgen(gcda_driver):
-    base_cmd = ["gcc", "-w", "-fprofile-use", "-mcmodel=large"]
+    base_cmd = ["gcc", "-w", "-fprofile-use"]
     optimization_levels = ["", "-O1", "-O2", "-O3", "-Og", "-Os", "-Ofast"]
     clang_cmd = ["clang", "-w"]
 
