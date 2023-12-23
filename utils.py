@@ -69,6 +69,8 @@ def generate_compile_yarpgen(file_name):
     execute_command(cmd)
     cmd = "mv " + file_name + " " + file_name + "_O3"
     execute_command(cmd)
+    delete_old_gcda("func", file_name)
+    delete_old_gcda("driver", file_name)
     cmd = "gcc -o " + file_name + " driver.c func.c"
     execute_command(cmd)
     shutil.copyfile(file_name + "-func.gcda", file_name + "_mut-func.gcda")
@@ -121,6 +123,7 @@ def generate_compile_csmith(file_name):
     execute_command(cmd)
     cmd = "mv " + file_name + " " + file_name + "_O3"
     execute_command(cmd)
+    delete_old_gcda(file_name, file_name)
     cmd = "gcc -o " + file_name + " " + file_name + ".c"
     execute_command(cmd)
     shutil.copyfile(file_name + ".gcda", file_name + "_mut-" + file_name + ".gcda")
@@ -171,6 +174,11 @@ def delete_old_file(target_binary_name):
     if os.path.exists(target_binary_name + "_mut_O1.txt"):
         cmd = "rm " + target_binary_name + "_mut_*.txt"
         execute_command(cmd)
+
+
+def delete_old_gcda(source_code_name, target_binary_name):
+    if os.path.exists(target_binary_name + "_mut-" + source_code_name + ".gcda"):
+        os.remove(target_binary_name + "_mut-" + source_code_name + ".gcda")
 
 
 def gcc_recompile_yarpgen(gcda_driver):
