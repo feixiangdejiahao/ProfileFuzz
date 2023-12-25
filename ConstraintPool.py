@@ -31,10 +31,12 @@ class ConstraintPool:
         return self.constraint
 
     def schedule(self, gcda):
-        print("scheduling...")
         sim = calculate_similarity(gcda)
         print("similarity: " + str(sim))
         if sim not in self.similarity_list and sim != 1.0:
+            print("new similarity: " + str(sim))
             self.similarity_list.append(sim)
             self.constraint_pool.append(self.constraint)
             print("constraint pool: " + str(self.constraint_pool))
+        else:
+            print("no new similarity found")
