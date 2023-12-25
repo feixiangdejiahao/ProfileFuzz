@@ -69,6 +69,7 @@ class GcovConstraint:
         else:
             old_constraint = []
         self.constraint_pool.record(old_constraint.append(assign_constraint))
+        print(self.constraint_pool.get_constraint())
         solutions = []
         while solver.check() == sat:
             if len(solutions) > 1000:
