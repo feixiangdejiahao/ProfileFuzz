@@ -63,13 +63,14 @@ class GcovConstraint:
         solver.add(assign_constraint)
         print(self.constraint_pool.get())
         if self.constraint_pool.get():
-            old_constraint = random.choice(self.constraint_pool.get())
-            for c in old_constraint:
+            new_constraint = random.choice(self.constraint_pool.get())
+            for c in new_constraint:
                 solver.add(c)
         else:
-            old_constraint = []
+            new_constraint = []
         print(assign_constraint)
-        self.constraint_pool.record(old_constraint.append(assign_constraint))
+        new_constraint.append(assign_constraint)
+        self.constraint_pool.record(new_constraint)
         print(self.constraint_pool.constraint)
         solutions = []
         while solver.check() == sat:
