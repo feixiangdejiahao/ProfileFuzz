@@ -84,7 +84,7 @@ class GcovConstraint:
             for d in model:
                 c = d()
                 block.append(c != model[d])
-            solver.add(And(block))
+            solver.add(Or(block))
         print(solutions, len(solutions))
         exit(-1)
         if not solutions:
