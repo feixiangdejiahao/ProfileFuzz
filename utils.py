@@ -165,6 +165,8 @@ def gcc_recompile_csmith(gcda):
         cmd = base_cmd + [opt, source_file, "-o", output_base]
         execute_command(" ".join(cmd))
         execute_command(f"./{output_base} > {compiled_name} 2>&1")
+        if opt == "-O3":
+            shutil.copyfile(output_base, output_base + "_O3")
 
     # Clang Compilation
     clang_compiled_name = output_base + "_clang.txt"
@@ -214,6 +216,8 @@ def gcc_recompile_yarpgen(gcda_driver):
         cmd = base_cmd + [opt, driver_file, func_file, "-o", output_base]
         execute_command(" ".join(cmd))
         execute_command(f"./{output_base} > {compiled_name} 2>&1")
+        if opt == "-O3":
+            shutil.copyfile(output_base, output_base + "_O3")
 
     # Clang Compilation
     clang_compiled_name = output_base + "_clang.txt"
