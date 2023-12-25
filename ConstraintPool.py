@@ -32,6 +32,7 @@ class ConstraintPool:
 
     def schedule(self, gcda):
         sim = calculate_similarity(gcda)
+        print("similarity: " + str(sim))
         if sim in self.similarity_list:
             return
         else:
