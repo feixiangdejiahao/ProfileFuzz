@@ -248,6 +248,8 @@ def counter_mutate(constraints, record):
             if isinstance(result, list):
                 record.counters = result
                 break
+            elif len(record.counters) == 1:
+                break
 
 
 not_a_bug = ["relink with --no-relax"]

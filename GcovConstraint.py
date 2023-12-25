@@ -61,9 +61,10 @@ class GcovConstraint:
         assign_constraint = Int("arc" + str(self.counter_list[index].source_block_number) + "_" + str(
             self.counter_list[index].destination_block_number)) == value
         solver.add(assign_constraint)
-        for c in self.constraint_pool.get():
+        old_constraint = random.choice(self.constraint_pool.get())
+        for c in old_constraint:
             solver.add(c)
-        self.constraint_pool.record(assign_constraint)
+        self.constraint_pool.record(old_constraint.append(assign_constraint))
         solutions = []
         while solver.check() == sat:
             if len(solutions) > 1000:
