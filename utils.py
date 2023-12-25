@@ -241,7 +241,7 @@ def gcda_mutate(gcda):
         record = gcda.records[index + 1]
         if isinstance(record, GCovDataCounterBaseRecord):
             index = random.randint(0, len(record.counters) - 1)
-            value = random.randint(0, 2 ** 32 - 1)
+            value = random.randint(0, 2 ** 10 - 1)
             result = constraints.solve(index, value)
             if isinstance(result, list):
                 record.counters = result
