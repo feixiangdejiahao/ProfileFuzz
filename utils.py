@@ -231,29 +231,25 @@ def gcc_recompile_yarpgen(gcda_driver):
 
 def gcda_mutate(gcda):
     print("mutating...")
-    method_indent_driver = select_method_by_block(gcda.method_block_dict)
-    index = 0
-    for index in gcda.function_index:
-        if gcda.records[index].ident == method_indent_driver:
-            break
-    constraints = gcda.method_constraint_dict[method_indent_driver]
-    record = gcda.records[index + 1]
-    counter_mutate(constraints, record)
-    gcda.save(gcda.target_binary_name + "_mut-" + gcda.source_file_name + ".gcda")
-    return constraints
-
-
-def counter_mutate(constraints, record):
     while True:
+        method_indent_driver = select_method_by_block(gcda.method_block_dict)
+        index = 0
+        for index in gcda.function_index:
+            if gcda.records[index].ident == method_indent_driver:
+                break
+        constraints = gcda.method_constraint_dict[method_indent_driver]
+        record = gcda.records[index + 1]
         if isinstance(record, GCovDataCounterBaseRecord):
             index = random.randint(0, len(record.counters) - 1)
-            value = random.randint(0, 2 ** 10 - 1)
+            value = random.randint(0, 2 ** 32 - 1)
             result = constraints.solve(index, value)
             if isinstance(result, list):
                 record.counters = result
                 break
             elif len(record.counters) == 1:
                 break
+    gcda.save(gcda.target_binary_name + "_mut-" + gcda.source_file_name + ".gcda")
+    return constraints
 
 
 not_a_bug = ["relink with --no-relax"]
