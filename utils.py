@@ -230,6 +230,7 @@ def gcc_recompile_yarpgen(gcda_driver):
 
 
 def gcda_mutate(gcda):
+    print("mutating...")
     method_indent_driver = select_method_by_block(gcda.method_block_dict)
     index = 0
     for index in gcda.function_index:
