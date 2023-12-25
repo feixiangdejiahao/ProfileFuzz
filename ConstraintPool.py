@@ -1,4 +1,15 @@
-from utils import calculate_similarity
+import os
+import re
+
+
+def calculate_similarity(gcda):
+    file_name = gcda.target_binary_name
+    cmd = "radiff2 -s " + file_name + "_O3 " + file_name + "_mut_O3"
+    result = os.popen(cmd).read()
+    pattern = r"similarity:\s([0-9.]+)"
+    match = re.search(pattern, result)
+    sim = match.group(1)
+    return float(sim)
 
 
 class ConstraintPool:

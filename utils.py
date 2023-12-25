@@ -1,6 +1,5 @@
 import os
 import random
-import re
 import shutil
 import subprocess
 import time
@@ -8,7 +7,16 @@ import time
 from GcdaInfo import GcdaInfo, GCovDataCounterBaseRecord, GCovDataFunctionAnnouncementRecord
 from GcnoInfo import GcnoInfo, GcovNoteFunctionAnnouncementRecord
 from GcovConstraint import GcovConstraint
-from main import select_method_by_block
+
+
+def select_method_by_block(method_block_dict):
+    sum_up = sum(method_block_dict.values())
+    random_number = random.randint(0, sum_up)
+    for method in method_block_dict:
+        if random_number <= method_block_dict[method]:
+            return method
+        else:
+            random_number -= method_block_dict[method]
 
 
 def construct_constraint(gcno):
@@ -212,16 +220,6 @@ def gcc_recompile_yarpgen(gcda_driver):
     cmd = clang_cmd + [driver_file, func_file, "-o", output_base]
     execute_command(" ".join(cmd))
     execute_command(f"./{output_base} > {clang_compiled_name} 2>&1")
-
-
-def calculate_similarity(gcda):
-    file_name = gcda.target_binary_name
-    cmd = "radiff2 -s " + file_name + "_O3 " + file_name + "_mut_O3"
-    result = os.popen(cmd).read()
-    pattern = r"similarity:\s([0-9.]+)"
-    match = re.search(pattern, result)
-    sim = match.group(1)
-    return float(sim)
 
 
 def gcda_mutate(gcda):

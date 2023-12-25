@@ -32,15 +32,5 @@ def main():
         exit(-1)
 
 
-def select_method_by_block(method_block_dict):
-    sum_up = sum(method_block_dict.values())
-    random_number = random.randint(0, sum_up)
-    for method in method_block_dict:
-        if random_number <= method_block_dict[method]:
-            return method
-        else:
-            random_number -= method_block_dict[method]
-
-
 if __name__ == "__main__":
     main()
