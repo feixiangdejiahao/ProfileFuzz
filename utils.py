@@ -166,7 +166,8 @@ def gcc_recompile_csmith(gcda):
         execute_command(" ".join(cmd))
         execute_command(f"./{output_base} > {compiled_name} 2>&1")
         if opt == "-O3":
-            shutil.copyfile(output_base, output_base + "_O3")
+            cmd = "cp " + output_base + " " + output_base + "_O3"
+            execute_command(cmd)
 
     # Clang Compilation
     clang_compiled_name = output_base + "_clang.txt"
@@ -176,6 +177,7 @@ def gcc_recompile_csmith(gcda):
 
 
 def differential_test(gcda):
+    print("differential testing...")
     optimization_levels = ["", "_O1", "_O2", "_O3", "_Og", "_Os", "_Ofast", "_clang"]
     target_binary_name = gcda.target_binary_name
     cmd = "diff --from-file " + target_binary_name + ".txt "
@@ -217,7 +219,8 @@ def gcc_recompile_yarpgen(gcda_driver):
         execute_command(" ".join(cmd))
         execute_command(f"./{output_base} > {compiled_name} 2>&1")
         if opt == "-O3":
-            shutil.copyfile(output_base, output_base + "_O3")
+            cmd = "cp " + output_base + " " + output_base + "_O3"
+            execute_command(cmd)
 
     # Clang Compilation
     clang_compiled_name = output_base + "_clang.txt"
@@ -261,9 +264,9 @@ def execute_command(command):
     if process.returncode != 0 and not any(x in stderr.decode() for x in not_a_bug):
         print("Error executing command:", command)
         print(stderr.decode())
-    if process.returncode != 0 and "profile data is not flow-consistent" in stderr.decode():
-        save_bug_report("flow_inconsistent", command)
-        exit(-1)
+    # if process.returncode != 0 and "profile data is not flow-consistent" in stderr.decode():
+    #     save_bug_report("flow_inconsistent", command)
+    #     exit(-1)
     return process.returncode
 
 
