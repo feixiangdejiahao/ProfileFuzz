@@ -1,10 +1,11 @@
 import os
 import random
+import re
 import shutil
 import subprocess
 import time
 
-from GcdaInfo import GcdaInfo, GCovDataCounterBaseRecord
+from GcdaInfo import GcdaInfo, GCovDataCounterBaseRecord, GCovDataFunctionAnnouncementRecord
 from GcnoInfo import GcnoInfo, GcovNoteFunctionAnnouncementRecord
 from GcovConstraint import GcovConstraint
 from main import select_method_by_block
@@ -51,8 +52,10 @@ def init_csmith(dir_path, file_name):
     os.makedirs(dir_path + file_name)
     os.chdir(dir_path + file_name)
     gcda = generate_compile_csmith(file_name)
-    method_constraint_dict, method_block_dict = get_basic_info_csmith(file_name)
-    return gcda, method_constraint_dict, method_block_dict
+    gcda.method_constraint_dict, gcda.method_block_dict = get_basic_info_csmith(file_name)
+    gcda.function_index = [gcda.records.index(record) for record in gcda.records if
+                           isinstance(record, GCovDataFunctionAnnouncementRecord)]
+    return gcda
 
 
 def generate_compile_yarpgen(file_name):
@@ -107,7 +110,15 @@ def init_yarpgen(dir_path, file_name):
     gcda_driver, gcda_func = generate_compile_yarpgen(file_name)
     method_constraint_dict_driver, method_block_dict_driver, method_constraint_dict_func, method_block_dict_func = get_basic_info_yarpgen(
         file_name)
-    return gcda_driver, gcda_func, method_constraint_dict_driver, method_block_dict_driver, method_constraint_dict_func, method_block_dict_func
+    gcda_driver.method_constraint_dict = method_constraint_dict_driver
+    gcda_driver.method_block_dict = method_block_dict_driver
+    gcda_func.method_constraint_dict = method_constraint_dict_func
+    gcda_func.method_block_dict = method_block_dict_func
+    gcda_driver.function_index = [gcda_driver.records.index(record) for record in gcda_driver.records if
+                                  isinstance(record, GCovDataFunctionAnnouncementRecord)]
+    gcda_func.function_index = [gcda_func.records.index(record) for record in gcda_func.records if
+                                isinstance(record, GCovDataFunctionAnnouncementRecord)]
+    return gcda_driver, gcda_func
 
 
 def generate_compile_csmith(file_name):
@@ -206,19 +217,24 @@ def gcc_recompile_yarpgen(gcda_driver):
 def calculate_similarity(gcda):
     file_name = gcda.target_binary_name
     cmd = "radiff2 -s " + file_name + "_O3 " + file_name + "_mut_O3"
-    sim = os.popen(cmd).read()
+    result = os.popen(cmd).read()
+    pattern = r"similarity:\s([0-9.]+)"
+    match = re.search(pattern, result)
+    sim = match.group(1)
+    return float(sim)
 
 
-def gcda_mutate(gcda, method_constraint_dict, method_block_dict, function_index):
-    method_indent_driver = select_method_by_block(method_block_dict)
+def gcda_mutate(gcda):
+    method_indent_driver = select_method_by_block(gcda.method_block_dict)
     index = 0
-    for index in function_index:
+    for index in gcda.function_index:
         if gcda.records[index].ident == method_indent_driver:
             break
-    constraints = method_constraint_dict[method_indent_driver]
+    constraints = gcda.method_constraint_dict[method_indent_driver]
     record = gcda.records[index + 1]
     counter_mutate(constraints, record)
     gcda.save(gcda.target_binary_name + "_mut-" + gcda.source_file_name + ".gcda")
+    return constraints
 
 
 def counter_mutate(constraints, record):

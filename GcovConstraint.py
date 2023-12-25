@@ -1,5 +1,6 @@
 import random
 
+from ConstraintPool import ConstraintPool
 from GcnoInfo import GcovNoteArcSetRecord, GcovNoteLineSetRecord
 from z3 import *
 
@@ -12,6 +13,7 @@ class GcovConstraint:
         self.counter_list = []
         self.block_list = []
         self.constraints = []
+        self.constraint_pool = ConstraintPool()
 
     def extract_arc_list(self):  # extract all arcs with counter from gcno
         for record in self.records:
@@ -44,7 +46,6 @@ class GcovConstraint:
             self.constraints.append(constraint)
 
     def solve(self, index, value):
-
         solver = Solver()
         for arc in self.arc_list:
             solver.add(Int("arc" + str(arc.source_block_number) + "_" + str(arc.destination_block_number)) >= 0)
@@ -57,12 +58,10 @@ class GcovConstraint:
             for arc in outgoing_arc:
                 outgoing_sum += Int("arc" + str(arc.source_block_number) + "_" + str(arc.destination_block_number))
             solver.add(incoming_sum == outgoing_sum)
-        solver.add(Int("arc" + str(self.counter_list[index].source_block_number) + "_" + str(self.counter_list[index].
-                                                                                             destination_block_number))
-                   == value)
-        f = open("constraint.txt", "w")
-        f.write("\n".join([str(i) for i in solver.assertions()]))
-        f.close()
+        assign_constraint = Int("arc" + str(self.counter_list[index].source_block_number) + "_" + str(
+            self.counter_list[index].destination_block_number)) == value
+        solver.add(Int(assign_constraint))
+        self.constraint_pool.record(assign_constraint)
         solutions = []
         while solver.check() == sat:
             if len(solutions) > 1000:

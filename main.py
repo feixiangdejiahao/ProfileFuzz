@@ -12,27 +12,21 @@ def main():
     mutation_number = int(sys.argv[3])
     generator = sys.argv[4]
     if generator == "csmith":
-        gcda, method_constraint_dict, method_block_dict = init_csmith(dir_path, file_name)
-
-        function_index = [gcda.records.index(record) for record in gcda.records if
-                          isinstance(record, GCovDataFunctionAnnouncementRecord)]
+        gcda = init_csmith(dir_path, file_name)
         for i in range(mutation_number):
-            gcda_mutate(gcda, method_constraint_dict, method_block_dict, function_index)
+            constraint = gcda_mutate(gcda)
             gcc_recompile_csmith(gcda)
             differential_test(gcda)
-
+            constraint.constraint_pool.schedule(gcda)
     elif generator == "yarpgen":
-        gcda_driver, gcda_func, method_constraint_dict_driver, method_block_dict_driver, method_constraint_dict_func, method_block_dict_func = init_yarpgen(
-            dir_path, file_name)
-        function_index_driver = [gcda_driver.records.index(record) for record in gcda_driver.records if
-                                 isinstance(record, GCovDataFunctionAnnouncementRecord)]
-        function_index_func = [gcda_func.records.index(record) for record in gcda_func.records if
-                               isinstance(record, GCovDataFunctionAnnouncementRecord)]
+        gcda_driver, gcda_func = init_yarpgen(dir_path, file_name)
         for i in range(mutation_number):
-            gcda_mutate(gcda_driver, method_constraint_dict_driver, method_block_dict_driver, function_index_driver)
-            gcda_mutate(gcda_func, method_constraint_dict_func, method_block_dict_func, function_index_func)
+            constraint_driver = gcda_mutate(gcda_driver)
+            constraint_func = gcda_mutate(gcda_func)
             gcc_recompile_yarpgen(gcda_driver)
             differential_test(gcda_driver)
+            constraint_driver.constraint_pool.schedule(gcda_driver)
+            constraint_func.constraint_pool.schedule(gcda_func)
     else:
         print("Generator must be csmith or yarpgen")
         exit(-1)

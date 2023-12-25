@@ -1,5 +1,4 @@
 import os
-import random
 
 import GcovConst
 from GcovIO import GcovIO
@@ -176,6 +175,9 @@ class GcdaInfo:
         self.filename = filename
         self.header = header
         self.records = records
+        self.method_constraint_dict = None
+        self.method_block_dict = None
+        self.function_index = None
         return
 
     def pull_records(self):
