@@ -68,6 +68,7 @@ class GcovConstraint:
                 solver.add(c)
         else:
             old_constraint = []
+        print(assign_constraint)
         self.constraint_pool.record(old_constraint.append(assign_constraint))
         print(self.constraint_pool.get_constraint())
         solutions = []
