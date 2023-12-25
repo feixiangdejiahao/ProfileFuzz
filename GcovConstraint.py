@@ -61,6 +61,7 @@ class GcovConstraint:
         assign_constraint = Int("arc" + str(self.counter_list[index].source_block_number) + "_" + str(
             self.counter_list[index].destination_block_number)) == value
         solver.add(assign_constraint)
+        print(self.constraint_pool.get())
         if self.constraint_pool.get():
             old_constraint = random.choice(self.constraint_pool.get())
             for c in old_constraint:
