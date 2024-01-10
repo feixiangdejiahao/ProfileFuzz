@@ -53,46 +53,17 @@ def get_basic_info_csmith(file_name):
     return method_constraint_dict, method_block_dict
 
 
-def init_csmith(dir_path, file_name):
-    file_name = "test" + file_name
+def init_csmith(dir_path, file_name, optimization_level):
+    file_name = "test" + file_name + "/" + optimization_level
     if os.path.exists(dir_path + file_name):
         shutil.rmtree(dir_path + file_name)
     os.makedirs(dir_path + file_name)
     os.chdir(dir_path + file_name)
-    gcda = generate_compile_csmith(file_name)
+    gcda = generate_compile_csmith(file_name, optimization_level)
     gcda.method_constraint_dict, gcda.method_block_dict = get_basic_info_csmith(file_name)
     gcda.function_index = [gcda.records.index(record) for record in gcda.records if
                            isinstance(record, GCovDataFunctionAnnouncementRecord)]
     return gcda
-
-
-def generate_compile_yarpgen(file_name):
-    generate_cmd = "yarpgen --std=c"
-    compile_cmd = "gcc -w --coverage driver.c func.c -o " + file_name
-    execute_cmd = "timeout 30s ./" + file_name + " > " + file_name + ".txt 2>&1"
-    while True:
-        result = execute_command(generate_cmd)
-        result += execute_command(compile_cmd)
-        result += execute_command(execute_cmd)
-        if result == 0:
-            break
-    cmd = "gcc -w -O3 -fprofile-use driver.c func.c -o " + file_name  # backup -O3 version and use it to compare similarity
-    execute_command(cmd)
-    cmd = "mv " + file_name + " " + file_name + "_O3"
-    execute_command(cmd)
-    # delete_old_gcda("func", file_name)
-    # delete_old_gcda("driver", file_name)
-    cmd = "gcc -o " + file_name + " driver.c func.c"
-    execute_command(cmd)
-    shutil.copyfile(file_name + "-func.gcda", file_name + "_mut-func.gcda")
-    shutil.copyfile(file_name + "-driver.gcda", file_name + "_mut-driver.gcda")
-    gcda_driver = GcdaInfo()
-    gcda_driver.load(file_name + "_mut-driver.gcda")
-    gcda_driver.pull_records()
-    gcda_func = GcdaInfo()
-    gcda_func.load(file_name + "_mut-func.gcda")
-    gcda_func.pull_records()
-    return gcda_driver, gcda_func
 
 
 def get_basic_info_yarpgen(file_name):
@@ -109,13 +80,13 @@ def get_basic_info_yarpgen(file_name):
     return method_constraint_dict_driver, method_block_dict_driver, method_constraint_dict_func, method_block_dict_func
 
 
-def init_yarpgen(dir_path, file_name):
+def init_yarpgen(dir_path, file_name, optimization_level):
     file_name = "test" + file_name
     if os.path.exists(dir_path + file_name):
         shutil.rmtree(dir_path + file_name)
     os.makedirs(dir_path + file_name)
     os.chdir(dir_path + file_name)
-    gcda_driver, gcda_func = generate_compile_yarpgen(file_name)
+    gcda_driver, gcda_func = generate_compile_yarpgen(file_name, optimization_level)
     method_constraint_dict_driver, method_block_dict_driver, method_constraint_dict_func, method_block_dict_func = get_basic_info_yarpgen(
         file_name)
     gcda_driver.method_constraint_dict = method_constraint_dict_driver
@@ -129,22 +100,52 @@ def init_yarpgen(dir_path, file_name):
     return gcda_driver, gcda_func
 
 
-def generate_compile_csmith(file_name):
+def generate_compile_yarpgen(file_name, optimization_level):
+    generate_cmd = "yarpgen --std=c"
+    compile_cmd = "gcc -w driver.c func.c -o " + file_name
+    execute_cmd = "timeout 30s ./" + file_name + " > " + file_name + ".txt 2>&1"
+    while True:
+        result = execute_command(generate_cmd)
+        result += execute_command(compile_cmd)
+        result += execute_command(execute_cmd)
+        if result == 0:
+            break
+    # PGO compilation
+    cmd = "gcc -w --coverage driver.c func.c -o " + file_name + " -" + optimization_level
+    execute_command(cmd)
+    cmd = "./" + file_name
+    execute_command(cmd)
+    cmd = "gcc -w -fprofile-use driver.c func.c -o " + file_name + " -" + optimization_level
+    execute_command(cmd)
+    shutil.copyfile(file_name + "-func.gcda", file_name + "_mut-func.gcda")
+    shutil.copyfile(file_name + "-driver.gcda", file_name + "_mut-driver.gcda")
+    gcda_driver = GcdaInfo()
+    gcda_driver.load(file_name + "_mut-driver.gcda")
+    gcda_driver.pull_records()
+    gcda_func = GcdaInfo()
+    gcda_func.load(file_name + "_mut-func.gcda")
+    gcda_func.pull_records()
+    return gcda_driver, gcda_func
+
+
+def generate_compile_csmith(file_name, optimization_level):
     generate_cmd = "csmith > " + file_name + ".c"
-    compile_cmd = "gcc -w --coverage " + file_name + ".c -o " + file_name
+    compile_cmd = "gcc -w " + file_name + ".c -o " + file_name
     execute_cmd = "timeout 30s ./" + file_name + " > " + file_name + ".txt 2>&1"
     result = 1
     while result != 0:
         execute_command(generate_cmd)
         execute_command(compile_cmd)
         result = execute_command(execute_cmd)
-    cmd = "gcc -w -O3 -fprofile-use " + file_name + ".c -o " + file_name + "_O3"  # backup -O3 version and use it to compare similarity
+
+    # PGO compilation
+    cmd = "gcc -w --coverage " + file_name + ".c -o " + file_name + " -" + optimization_level
     execute_command(cmd)
-    cmd = "mv " + file_name + " " + file_name + "_O3"
+    cmd = "./" + file_name
+    execute_command(cmd)
+    cmd = "gcc -w -fprofile-use " + file_name + ".c -o " + file_name + " -" + optimization_level
     execute_command(cmd)
     # delete_old_gcda(file_name, file_name)
-    cmd = "gcc -o " + file_name + " " + file_name + ".c"
-    execute_command(cmd)
     shutil.copyfile(file_name + ".gcda", file_name + "_mut-" + file_name + ".gcda")
     gcda = GcdaInfo()
     gcda.load(file_name + "_mut-" + file_name + ".gcda")
@@ -152,23 +153,17 @@ def generate_compile_csmith(file_name):
     return gcda
 
 
-def gcc_recompile_csmith(gcda):
+def gcc_recompile_csmith(gcda, optimization_level):
     base_cmd = ["gcc", "-w", "-fprofile-use"]
-    optimization_levels = ["", "-O1", "-O2", "-O3", "-Og", "-Os", "-Ofast"]
     clang_cmd = ["clang", "-w"]
 
     source_file = gcda.target_binary_name + ".c"
     output_base = gcda.target_binary_name + "_mut"
     delete_old_file(gcda.target_binary_name)
-    for opt in optimization_levels:
-        compiled_name = output_base + opt.replace("-", "_") + ".txt"
-        cmd = base_cmd + [opt, source_file, "-o", output_base]
-        execute_command(" ".join(cmd))
-        execute_command(f"./{output_base} > {compiled_name} 2>&1")
-        if opt == "-O3":
-            cmd = "cp " + output_base + " " + output_base + "_O3"
-            execute_command(cmd)
-
+    compiled_name = output_base + ".txt"
+    cmd = base_cmd + [optimization_level, source_file, "-o", output_base]
+    execute_command(" ".join(cmd))
+    execute_command(f"./{output_base} > {compiled_name} 2>&1")
     # Clang Compilation
     clang_compiled_name = output_base + "_clang.txt"
     cmd = clang_cmd + [source_file, "-o", output_base]
@@ -178,11 +173,8 @@ def gcc_recompile_csmith(gcda):
 
 def differential_test(gcda):
     print("differential testing...")
-    optimization_levels = ["", "_O1", "_O2", "_O3", "_Og", "_Os", "_Ofast", "_clang"]
     target_binary_name = gcda.target_binary_name
-    cmd = "diff --from-file " + target_binary_name + ".txt "
-    for opt in optimization_levels:
-        cmd += f"{target_binary_name}_mut{opt}.txt "
+    cmd = "diff " + target_binary_name + ".txt " + target_binary_name + "_mut.txt"
     bug_found = execute_command(cmd)
     if not bug_found:
         print(f"No bugs found in {target_binary_name}")
@@ -194,8 +186,8 @@ def differential_test(gcda):
 def delete_old_file(target_binary_name):
     if os.path.exists(target_binary_name + "_mut"):
         os.remove(target_binary_name + "_mut")
-    if os.path.exists(target_binary_name + "_mut_O1.txt"):
-        cmd = "rm " + target_binary_name + "_mut_*.txt"
+    if os.path.exists(target_binary_name + "_mut.txt"):
+        cmd = "rm " + target_binary_name + "_mut.txt"
         execute_command(cmd)
 
 
@@ -204,24 +196,17 @@ def delete_old_gcda(source_code_name, target_binary_name):
         os.remove(target_binary_name + "_mut-" + source_code_name + ".gcda")
 
 
-def gcc_recompile_yarpgen(gcda_driver):
+def gcc_recompile_yarpgen(gcda_driver, optimization_level):
     base_cmd = ["gcc", "-w", "-fprofile-use"]
-    optimization_levels = ["", "-O1", "-O2", "-O3", "-Og", "-Os", "-Ofast"]
     clang_cmd = ["clang", "-w"]
-
     driver_file = "driver.c"
     func_file = "func.c"
     output_base = gcda_driver.target_binary_name + "_mut"
     delete_old_file(gcda_driver.target_binary_name)
-    for opt in optimization_levels:
-        compiled_name = output_base + opt.replace("-", "_") + ".txt"
-        cmd = base_cmd + [opt, driver_file, func_file, "-o", output_base]
-        execute_command(" ".join(cmd))
-        execute_command(f"./{output_base} > {compiled_name} 2>&1")
-        if opt == "-O3":
-            cmd = "cp " + output_base + " " + output_base + "_O3"
-            execute_command(cmd)
-
+    compiled_name = output_base + ".txt"
+    cmd = base_cmd + [optimization_level, driver_file, func_file, "-o", output_base]
+    execute_command(" ".join(cmd))
+    execute_command(f"./{output_base} > {compiled_name} 2>&1")
     # Clang Compilation
     clang_compiled_name = output_base + "_clang.txt"
     cmd = clang_cmd + [driver_file, func_file, "-o", output_base]
