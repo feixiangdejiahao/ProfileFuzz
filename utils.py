@@ -156,7 +156,7 @@ def generate_compile_csmith(file_name, optimization_level):
 def gcc_recompile_csmith(gcda, optimization_level):
     base_cmd = ["gcc", "-w", "-fprofile-use"]
     clang_cmd = ["clang", "-w"]
-
+    optimization_level = "-" + optimization_level
     source_file = gcda.target_binary_name + ".c"
     output_base = gcda.target_binary_name + "_mut"
     delete_old_file(gcda.target_binary_name)
@@ -201,6 +201,7 @@ def gcc_recompile_yarpgen(gcda_driver, optimization_level):
     clang_cmd = ["clang", "-w"]
     driver_file = "driver.c"
     func_file = "func.c"
+    optimization_level = "-" + optimization_level
     output_base = gcda_driver.target_binary_name + "_mut"
     delete_old_file(gcda_driver.target_binary_name)
     compiled_name = output_base + ".txt"
