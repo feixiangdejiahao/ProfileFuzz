@@ -254,7 +254,7 @@ def execute_command(command):
 
 
 def save_bug_report(file_name, cmd):
-    cmd = "echo " + cmd + " > " + "diff_cmd.txt"
+    cmd = "echo " + cmd + " > " + "bug_cmd.txt"
     execute_command(cmd)
     time_stamp = str(int(time.time()))
     os.makedirs("../bug_report/" + file_name + "_" + time_stamp, exist_ok=True)
