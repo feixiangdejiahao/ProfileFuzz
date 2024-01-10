@@ -4,7 +4,7 @@ import re
 
 def calculate_similarity(gcda):
     file_name = gcda.target_binary_name
-    cmd = "radiff2 -s " + file_name + "_O3 " + file_name + "_mut_O3"
+    cmd = "radiff2 -s " + file_name + " " + file_name + "_mut"
     result = os.popen(cmd).read()
     pattern = r"similarity:\s([0-9.]+)"
     match = re.search(pattern, result)
