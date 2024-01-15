@@ -154,6 +154,7 @@ def generate_compile_csmith(file_name, optimization_level):
 
 
 def gcc_recompile_csmith(gcda, optimization_level):
+    print("recompiling...")
     base_cmd = ["gcc", "-w", "-fprofile-use"]
     clang_cmd = ["clang", "-w"]
     optimization_level = "-" + optimization_level
@@ -197,6 +198,7 @@ def delete_old_gcda(source_code_name, target_binary_name):
 
 
 def gcc_recompile_yarpgen(gcda_driver, optimization_level):
+    print("recompiling...")
     base_cmd = ["gcc", "-w", "-fprofile-use"]
     clang_cmd = ["clang", "-w"]
     driver_file = "driver.c"

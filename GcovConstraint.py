@@ -46,6 +46,7 @@ class GcovConstraint:
             self.constraints.append(constraint)
 
     def solve(self, index, value):
+        print("solving...")
         solver = Solver()
         for arc in self.arc_list:
             solver.add(Int("arc" + str(arc.source_block_number) + "_" + str(arc.destination_block_number)) >= 10)
