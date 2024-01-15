@@ -87,7 +87,9 @@ class GcovConstraint:
                 block.append(c != model[d])
             solver.add(Or(block))
         if not solutions:
+            print("no solution found")
             return False
+        print("solution found")
         return random.choice(solutions)
 
 
