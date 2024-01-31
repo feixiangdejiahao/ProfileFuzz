@@ -1,38 +1,45 @@
-from z3 import *
+import ast
 
-# 创建Z3求解器实例
-solver = Solver()
 
-# 定义变量
-A = Int('A') # A的执行次数
-B = Int('B') # B的执行次数
-C = Int('C') # C的执行次数
-D = Int('D') # D的执行次数
+class ScopeFinder(ast.NodeVisitor):
+    def __init__(self):
+        self.scopes = []
 
-# 定义每个变量的范围
-solver.add(And(A >= 13, A <= 100))  # 假设A的范围是3到10
-solver.add(And(B >= 10, B <= 50))   # 假设B的范围是1到5
-solver.add(And(C >= 21, C <= 70))   # 假设C的范围是2到7
-solver.add(And(D >= 20, D <= 79))   # 假设D的范围是2到7
+    def visit_For(self, node):
+        self.scopes.append(['For Loop Body', node.lineno, node.end_lineno])
+        self.generic_visit(node)
 
-# 添加约束
-solver.add(A == 2 * B + C) # A是B的两倍
-solver.add(C == D)     # C和D的执行次数必须相等
+    def visit_While(self, node):
+        self.scopes.append(['While Loop Body', node.lineno, node.end_lineno])
+        self.generic_visit(node)
 
-# 找出所有可能的解
-solutions = []
-while solver.check() == sat:
-    m = solver.model()
-    solution = (m[A].as_long(), m[B].as_long(), m[C].as_long(), m[D].as_long())
-    solutions.append(solution)
+    def visit_If(self, node):
+        self.scopes.append(['If Statement Body', node.lineno, node.end_lineno])
+        self.generic_visit(node)
 
-    # 防止重复解
-    block = []
-    for d in m:
-        c = d()
-        block.append(c != m[d])
-    solver.add(Or(block))
 
-# 打印所有解
-for sol in solutions:
-    print(f"A: {sol[0]}, B: {sol[1]}, C: {sol[2]}, D: {sol[3]}")
+def find_scopes(code):
+    tree = ast.parse(code)
+    finder = ScopeFinder()
+    finder.visit(tree)
+    return finder.scopes
+
+
+# Example Python code to test the function
+example_code = """
+def example_function():
+    for i in range(5):
+        if i > 2:
+            print(i)
+        else:
+            print(i + 1)
+
+class ExampleClass:
+    def class_method(self):
+        while True:
+            pass
+"""
+
+# Find scopes in the example code
+scopes = find_scopes(example_code)
+scopes

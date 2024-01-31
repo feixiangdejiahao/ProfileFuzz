@@ -19,7 +19,7 @@ def main():
             constraint = gcda_mutate(gcda)
             gcc_recompile_csmith(gcda,optimization_level)
             differential_test(gcda)
-            constraint.constraint_pool.schedule(gcda)
+            # constraint.constraint_pool.schedule(gcda)
     elif generator == "yarpgen":
         gcda_driver, gcda_func = init_yarpgen(dir_path, file_name, optimization_level)
         for i in range(mutation_number):
@@ -27,8 +27,8 @@ def main():
             constraint_func = gcda_mutate(gcda_func)
             gcc_recompile_yarpgen(gcda_driver,optimization_level)
             differential_test(gcda_driver)
-            constraint_driver.constraint_pool.schedule(gcda_driver)
-            constraint_func.constraint_pool.schedule(gcda_func)
+            # constraint_driver.constraint_pool.schedule(gcda_driver)
+            # constraint_func.constraint_pool.schedule(gcda_func)
     else:
         print("Generator must be csmith or yarpgen")
         exit(-1)
