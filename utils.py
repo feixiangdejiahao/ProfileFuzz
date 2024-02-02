@@ -54,6 +54,11 @@ def get_basic_info_csmith(file_name):
 
 
 def init_csmith(dir_path, file_name, optimization_level):
+    file_name = "test" + file_name
+    if os.path.exists(dir_path + file_name):
+        shutil.rmtree(dir_path + file_name)
+    os.makedirs(dir_path + file_name)
+    os.chdir(dir_path + file_name)
     file_name = "test" + file_name + "/" + optimization_level
     if os.path.exists(dir_path + file_name):
         shutil.rmtree(dir_path + file_name)
@@ -251,7 +256,7 @@ def execute_command(command):
         print(stderr.decode())
     if process.returncode != 0:
         save_bug_report("execution_error", command)
-        exit(-1)
+        # exit(-1)
     return process.returncode
 
 
