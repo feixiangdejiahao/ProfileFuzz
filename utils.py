@@ -185,6 +185,9 @@ def differential_test(gcda):
     if not bug_found:
         print(f"No bugs found in {target_binary_name}")
     else:
+        if execute_command("test -s " + target_binary_name + "_mut.txt") == 0 or execute_command(
+                "test -s " + target_binary_name + "_mut.txt") == 0:
+            return
         print(f"Bug found in {target_binary_name}")
         save_bug_report(target_binary_name, cmd)
 
@@ -254,7 +257,7 @@ def execute_command(command):
     if process.returncode != 0 and not any(x in stderr.decode() for x in not_a_bug):
         print("Error executing command:", command)
         print(stderr.decode())
-    if process.returncode != 0:
+    if process.returncode != 0 and "profile data is not flow-consistent" not in stderr.decode():
         save_bug_report("execution_error", command)
         # exit(-1)
     return process.returncode
