@@ -185,8 +185,7 @@ def differential_test(gcda):
     if not bug_found:
         print(f"No bugs found in {target_binary_name}")
     else:
-        if execute_command("test -s " + target_binary_name + "_mut.txt") == 0 or execute_command(
-                "test -s " + target_binary_name + "_mut.txt") == 0:
+        if open(target_binary_name + ".txt").read() == "" or open(target_binary_name + "_mut.txt").read() == "":
             return
         print(f"Bug found in {target_binary_name}")
         save_bug_report(target_binary_name, cmd)
