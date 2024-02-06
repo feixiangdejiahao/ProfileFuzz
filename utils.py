@@ -256,7 +256,7 @@ def execute_command(command):
     if process.returncode != 0 and not any(x in stderr.decode() for x in not_a_bug):
         print("Error executing command:", command)
         print(stderr.decode())
-    if process.returncode != 0 and "profile data is not flow-consistent" not in stderr.decode():
+    if process.returncode != 0 and "profile data is not flow-consistent" not in stderr.decode() and "relink with --no-relax" not in stderr.decode() and "No such file or directory":
         save_bug_report("execution_error", command)
         # exit(-1)
     return process.returncode
