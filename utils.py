@@ -168,27 +168,25 @@ def gcc_recompile_csmith(gcda, optimization_level):
     delete_old_file(gcda.target_binary_name)
     compiled_name = output_base + ".txt"
     cmd = base_cmd + [optimization_level, source_file, "-o", output_base]
-    execute_command(" ".join(cmd))
+    res = execute_command(" ".join(cmd))
+    if res == -100:
+        return -100
     execute_command(f"./{output_base} > {compiled_name} 2>&1")
     # Clang Compilation
     clang_compiled_name = output_base + "_clang.txt"
     cmd = clang_cmd + [source_file, "-o", output_base]
-    execute_command(" ".join(cmd))
+    res = execute_command(" ".join(cmd))
+    if res == -100:
+        return -100
     execute_command(f"./{output_base} > {clang_compiled_name} 2>&1")
+    return 0
 
 
 def differential_test(gcda):
     print("differential testing...")
     target_binary_name = gcda.target_binary_name
     cmd = "diff " + target_binary_name + ".txt " + target_binary_name + "_mut.txt"
-    bug_found = execute_command(cmd)
-    if not bug_found:
-        print(f"No bugs found in {target_binary_name}")
-    else:
-        if open(target_binary_name + ".txt").read() == "" or open(target_binary_name + "_mut.txt").read() == "":
-            return
-        print(f"Bug found in {target_binary_name}")
-        save_bug_report(target_binary_name, cmd)
+    execute_command(cmd)
 
 
 def delete_old_file(target_binary_name):
@@ -215,13 +213,18 @@ def gcc_recompile_yarpgen(gcda_driver, optimization_level):
     delete_old_file(gcda_driver.target_binary_name)
     compiled_name = output_base + ".txt"
     cmd = base_cmd + [optimization_level, driver_file, func_file, "-o", output_base]
-    execute_command(" ".join(cmd))
+    res = execute_command(" ".join(cmd))
+    if res == -100:
+        return -100
     execute_command(f"./{output_base} > {compiled_name} 2>&1")
     # Clang Compilation
     clang_compiled_name = output_base + "_clang.txt"
     cmd = clang_cmd + [driver_file, func_file, "-o", output_base]
-    execute_command(" ".join(cmd))
+    res = execute_command(" ".join(cmd))
+    if res == -100:
+        return -100
     execute_command(f"./{output_base} > {clang_compiled_name} 2>&1")
+    return 0
 
 
 def gcda_mutate(gcda):
@@ -247,18 +250,17 @@ def gcda_mutate(gcda):
     return constraints
 
 
-not_a_bug = ["relink with --no-relax"]
-
-
 def execute_command(command):
     process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     stdout, stderr = process.communicate()
-    if process.returncode != 0 and not any(x in stderr.decode() for x in not_a_bug):
+    if process.returncode != 0:
+        if "profile data is not flow-consistent" in stderr.decode():
+            return -100
+        elif "relink with --no-relax" in stderr.decode():
+            return process.returncode
         print("Error executing command:", command)
         print(stderr.decode())
-    if process.returncode != 0 and "profile data is not flow-consistent" not in stderr.decode() and "relink with --no-relax" not in stderr.decode() and "No such file or directory":
-        save_bug_report("execution_error", command)
-        # exit(-1)
+        save_bug_report("bug", command)
     return process.returncode
 
 

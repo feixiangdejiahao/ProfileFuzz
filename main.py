@@ -17,7 +17,9 @@ def main():
         gcda = init_csmith(dir_path, file_name, optimization_level)
         for i in range(mutation_number):
             constraint = gcda_mutate(gcda)
-            gcc_recompile_csmith(gcda,optimization_level)
+            res = gcc_recompile_csmith(gcda, optimization_level)
+            if res == -100:
+                continue
             differential_test(gcda)
             # constraint.constraint_pool.schedule(gcda)
     elif generator == "yarpgen":
@@ -25,7 +27,9 @@ def main():
         for i in range(mutation_number):
             constraint_driver = gcda_mutate(gcda_driver)
             constraint_func = gcda_mutate(gcda_func)
-            gcc_recompile_yarpgen(gcda_driver,optimization_level)
+            res = gcc_recompile_yarpgen(gcda_driver, optimization_level)
+            if res == -100:
+                continue
             differential_test(gcda_driver)
             # constraint_driver.constraint_pool.schedule(gcda_driver)
             # constraint_func.constraint_pool.schedule(gcda_func)
