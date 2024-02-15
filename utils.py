@@ -254,9 +254,9 @@ def execute_command(command):
     process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     stdout, stderr = process.communicate()
     if process.returncode != 0:
-        if "profile data is not flow-consistent" in stderr.decode():
+        if "profile data is not flow-consistent" in stderr.decode() or "additional relocation overflows omitted from the output" in stderr.decode():
             return -100
-        elif process.returncode == 124 or "relink with --no-relax" in stderr.decode() or "No such file or directory" in stderr.decode() or "additional relocation overflows omitted from the output" in stderr.decode():
+        elif process.returncode == 124 or "relink with --no-relax" in stderr.decode() or "No such file or directory" in stderr.decode():
             return process.returncode
         print("Error executing command:", command)
         print(stderr.decode())
