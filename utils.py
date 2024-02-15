@@ -256,7 +256,7 @@ def execute_command(command):
     if process.returncode != 0:
         if "profile data is not flow-consistent" in stderr.decode():
             return -100
-        elif "relink with --no-relax" in stderr.decode() or "No such file or directory" in stderr.decode():
+        elif process.returncode == 124 or "relink with --no-relax" in stderr.decode() or "No such file or directory" in stderr.decode() or "additional relocation overflows omitted from the output" in stderr.decode():
             return process.returncode
         print("Error executing command:", command)
         print(stderr.decode())
